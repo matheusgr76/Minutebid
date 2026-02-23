@@ -1,0 +1,129 @@
+# scanner.py — Pure filter logic. No I/O, no API calls.
+# Takes raw data from all clients and returns actionable opportunities.
+
+import logging
+from config import MIN_MINUTE, MAX_MINUTE, WIN_PROB_THRESHOLD, MIN_EDGE_THRESHOLD
+
+logger = logging.getLogger(__name__)
+
+SECOND_HALF_PERIODS = {"2h", "2nd", "second", "2nd half", "second half", "sh"}
+
+
+def filter_opportunities(
+    events: list[dict],
+    prices: dict[str, float],
+    game_states: dict[str, dict],
+    reference_prices: dict[str, dict],
+) -> list[dict]:
+    """
+    Return opportunities matching all conditions:
+      1. Match is in minute range [MIN_MINUTE, MAX_MINUTE]
+      2. Match is in second half
+      3. At least one outcome has Polymarket implied prob > WIN_PROB_THRESHOLD
+
+    Edge (Reference prob - Polymarket prob) is computed when Reference data is available.
+    Opportunities with positive edge are flagged; all qualifying matches are shown.
+
+    Each opportunity dict:
+        {
+            "match":           str,
+            "minute":          int,
+            "score":           str,    # "2 - 0"
+            "leader":          str,    # outcome name with highest probability
+            "poly_prob":       float,  # e.g. 0.82
+            "reference_prob":  float|None,
+            "edge":            float|None,  # reference_prob - poly_prob
+            "market_url":      str,
+        }
+    """
+    opportunities = []
+
+    for event in events:
+        event_id = str(event.get("id", ""))
+        game_state = game_states.get(event_id)
+
+        if not game_state:
+            logger.debug("No game state for event %s — skipping", event_id)
+            continue
+
+        if not _is_in_target_window(game_state):
+            continue
+
+        best = _best_outcome(event, prices)
+        if best is None or best["probability"] <= WIN_PROB_THRESHOLD:
+            continue
+
+        ref_prob = _lookup_reference_prob(event, best["outcome"], reference_prices)
+        edge = round(ref_prob - best["probability"], 4) if ref_prob is not None else None
+
+        opportunities.append({
+            "match": event.get("title", "Unknown Match"),
+            "minute": game_state["minute"],
+            "score": f"{game_state['home_score']} - {game_state['away_score']}",
+            "leader": best["outcome"],
+            "poly_prob": best["probability"],
+            "reference_prob": ref_prob,
+            "edge": edge,
+            "market_url": f"https://polymarket.com/event/{event.get('slug', event_id)}",
+        })
+
+    logger.info("Found %d qualifying opportunities", len(opportunities))
+    return opportunities
+
+
+def _is_in_target_window(game_state: dict) -> bool:
+    """Return True if game minute and period match the configured window."""
+    minute = game_state.get("minute", 0)
+    period = game_state.get("period", "").lower().strip()
+
+    in_minute_range = MIN_MINUTE <= minute <= MAX_MINUTE
+    in_second_half = any(kw in period for kw in SECOND_HALF_PERIODS) if period else True
+
+    return in_minute_range and in_second_half
+
+
+def _best_outcome(event: dict, prices: dict[str, float]) -> dict | None:
+    """Find outcome with highest Polymarket implied probability."""
+    best_prob = 0.0
+    best_name = None
+
+    for market in event.get("markets", []):
+        condition_id = market.get("conditionId") or market.get("condition_id", "")
+        price = prices.get(condition_id)
+        if price is not None and price > best_prob:
+            best_prob = price
+            best_name = market.get("question") or condition_id
+
+    if best_name is None:
+        return None
+    return {"outcome": str(best_name), "probability": best_prob}
+
+
+def _lookup_reference_prob(
+    event: dict,
+    outcome_name: str,
+    reference_prices: dict[str, dict],
+) -> float | None:
+    """
+    Try to match this event to a Reference market by event title similarity,
+    then return the probability for the matching outcome.
+    """
+    event_title = event.get("title", "").lower()
+
+    for ref_event_name, outcomes in reference_prices.items():
+        if not _titles_overlap(event_title, ref_event_name):
+            continue
+        outcome_lower = outcome_name.lower()
+        for ref_outcome_name, prob in outcomes.items():
+            if ref_outcome_name in outcome_lower or outcome_lower in ref_outcome_name:
+                return prob
+
+    return None
+
+
+def _titles_overlap(title_a: str, title_b: str) -> bool:
+    """Return True if the two event titles share at least one significant word."""
+    stop_words = {"vs", "v", "fc", "the", "a", "an", "and", "&"}
+    words_a = {w for w in title_a.split() if w not in stop_words and len(w) > 2}
+    words_b = {w for w in title_b.split() if w not in stop_words and len(w) > 2}
+    return bool(words_a & words_b)

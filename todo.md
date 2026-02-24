@@ -29,7 +29,10 @@
 ---
 
 ## Session 3 — Hardening
-- [ ] Improve Polymarket ↔ Odds API event name matching (string fuzzy matching)
-- [ ] Implement robust retry logic for CLOB API temporary bottlenecks
-- [ ] Unit tests for `scanner.filter_opportunities()` with synthetic edge cases
-- [ ] Add session logging to a `.log` file for overnight monitoring
+- [x] Improve Polymarket ↔ Odds API event name matching (string fuzzy matching)
+- [x] Add session logging to a `.log` file for overnight monitoring
+- [x] Unit tests for `scanner.filter_opportunities()` with synthetic edge cases
+- [x] Pivot to Gamma API `bestAsk` for market prices (replaces problematic CLOB API calls)
+    - [x] Refactor `polymarket_client.py` to extraction prices from Gamma response
+    - [x] Update `main.py` to remove redundant CLOB calls
+- [x] Implement robust retry logic for Odds API and Gamma API calls

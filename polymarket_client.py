@@ -3,6 +3,7 @@
 
 import logging
 import requests
+import time
 from config import (
     GAMMA_API_BASE,
     CLOB_API_BASE,
@@ -14,25 +15,43 @@ from config import (
 logger = logging.getLogger(__name__)
 
 
-def _get(url: str, params: dict = None) -> dict | list | None:
-    """Shared GET helper with timeout and error handling."""
-    try:
-        response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT_SECONDS)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.Timeout:
-        logger.error("Request timed out: %s", url)
-    except requests.exceptions.HTTPError as exc:
-        logger.error("HTTP error %s for %s", exc.response.status_code, url)
-    except requests.exceptions.RequestException as exc:
-        logger.error("Request failed for %s: %s", url, exc)
+def _with_retry(func, *args, max_retries=3, initial_delay=1, **kwargs):
+    """Execution wrapper with exponential backoff for HTTP requests."""
+    retries = 0
+    while retries < max_retries:
+        try:
+            return func(*args, **kwargs)
+        except (requests.exceptions.RequestException, Exception) as e:
+            retries += 1
+            if retries == max_retries:
+                logger.error("Max retries reached for request. Last error: %s", e)
+                return None
+            
+            delay = initial_delay * (2 ** (retries - 1))
+            logger.warning("Request failed (%s). Retrying in %ds... (Attempt %d/%d)", 
+                           e, delay, retries, max_retries)
+            time.sleep(delay)
     return None
 
 
-def get_active_soccer_events() -> list[dict]:
-    """Fetch all active soccer events from specific leagues defined in config."""
+def _get(url: str, params: dict = None) -> dict | list | None:
+    """Shared GET helper with timeout, error handling, and exponential backoff retry."""
+    def make_req():
+        response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        return response.json()
+
+    return _with_retry(make_req)
+
+
+def get_active_soccer_events() -> tuple[list[dict], dict[str, float]]:
+    """
+    Fetch all active soccer events from specific leagues defined in config.
+    Returns (all_events, market_prices) where market_prices maps condition_id -> bestAsk.
+    """
     all_events = []
     seen_ids = set()
+    market_prices = {}
 
     def add_events(data):
         if not isinstance(data, list):
@@ -42,6 +61,17 @@ def get_active_soccer_events() -> list[dict]:
             if event_id not in seen_ids:
                 all_events.append(event)
                 seen_ids.add(event_id)
+                
+                # Extract prices directly from market data in Gamma response
+                for market in event.get("markets", []):
+                    cond_id = market.get("conditionId") or market.get("condition_id")
+                    best_ask = market.get("bestAsk")
+                    if cond_id and best_ask is not None:
+                        try:
+                            # bestAsk in Gamma is already 0.0-1.0 float string or float
+                            market_prices[str(cond_id)] = float(best_ask)
+                        except (ValueError, TypeError):
+                            continue
 
     # 1. Fetch by Series IDs (Premier League, La Liga, Serie A)
     for league, series_id in LEAGUE_SERIES_IDS.items():
@@ -57,35 +87,15 @@ def get_active_soccer_events() -> list[dict]:
         data = _get(f"{GAMMA_API_BASE}/events", params=params)
         add_events(data)
 
-    logger.info("Found %d unique active soccer events across targeted leagues", len(all_events))
-    return all_events
+    logger.info("Found %d unique active soccer events. Resolved %d prices from Gamma.", 
+                len(all_events), len(market_prices))
+    return all_events, market_prices
 
 
 def get_market_prices(condition_ids: list[str]) -> dict[str, float]:
     """
-    Fetch best-ask prices for YES tokens on the CLOB API.
-    Returns {condition_id: implied_probability} where 0.85 means 85%.
+    [DEPRECATED] Fetch best-ask prices from CLOB.
+    Now unnecessary as Gamma API provides these prices directly.
     """
-    if not condition_ids:
-        return {}
-
-    prices = {}
-    # Chunk IDs to avoid HTTP 414 (URI Too Long)
-    # 20 IDs per request is safe for most browsers/servers
-    chunk_size = 20
-    for i in range(0, len(condition_ids), chunk_size):
-        chunk = condition_ids[i : i + chunk_size]
-        params = {"token_ids": ",".join(chunk)}
-        data = _get(f"{CLOB_API_BASE}/midpoints", params=params)
-
-        if not isinstance(data, dict):
-            continue
-
-        for condition_id, price_str in data.items():
-            try:
-                prices[condition_id] = float(price_str)
-            except (ValueError, TypeError):
-                logger.debug("Unparseable price for %s: %s", condition_id, price_str)
-
-    logger.info("Resolved prices for %d markets", len(prices))
-    return prices
+    logger.warning("get_market_prices is deprecated. Use get_active_soccer_events return value.")
+    return {}

@@ -5,6 +5,7 @@
 import logging
 import os
 import requests
+import time
 from config import (
     ODDS_API_BASE,
     ODDS_API_SPORT,
@@ -15,6 +16,23 @@ from config import (
 )
 
 logger = logging.getLogger(__name__)
+
+def _with_retry(func, *args, max_retries=3, initial_delay=1, **kwargs):
+    """Execution wrapper with exponential backoff for HTTP requests."""
+    retries = 0
+    while retries < max_retries:
+        try:
+            return func(*args, **kwargs)
+        except (requests.exceptions.RequestException, Exception) as e:
+            retries += 1
+            if retries == max_retries:
+                logger.error("The Odds API: Max retries reached. Error: %s", e)
+                return None
+            
+            delay = initial_delay * (2 ** (retries - 1))
+            logger.warning("The Odds API: Request failed (%s). Retrying in %ds...", e, delay)
+            time.sleep(delay)
+    return None
 
 def _get_api_key() -> str | None:
     """Read API key from environment."""
@@ -48,12 +66,13 @@ def get_live_soccer_reference_prices() -> dict[str, dict]:
         "live": "true"
     }
 
-    try:
+    def make_req():
         response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT_SECONDS)
         response.raise_for_status()
-        data = response.json()
-    except Exception as exc:
-        logger.error("The Odds API request failed: %s", exc)
+        return response.json()
+
+    data = _with_retry(make_req)
+    if not data:
         return {}
 
     return _process_odds_data(data)

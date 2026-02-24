@@ -12,13 +12,19 @@ import scanner
 import display
 
 # ---------------------------------------------------------------------------
-# Logging — timestamps + module names for traceability
+# Logging — console + persistent file for traceability
 # ---------------------------------------------------------------------------
+log_format = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+date_format = "%H:%M:%S"
+
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%H:%M:%S",
-    stream=sys.stdout,
+    format=log_format,
+    datefmt=date_format,
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("minutebid_scan.log", encoding="utf-8")
+    ]
 )
 logger = logging.getLogger("main")
 
@@ -27,33 +33,11 @@ def run() -> None:
     load_dotenv()  # Load .env for Odds API credentials
     logger.info("=== Minutebid scan started ===")
 
-    # 1. Fetch active soccer events from targeted leagues
-    events = polymarket_client.get_active_soccer_events()
+    # 1. Fetch active soccer events and their market prices from Gamma
+    events, prices = polymarket_client.get_active_soccer_events()
     if not events:
         print("\n  No active soccer events found on Polymarket right now.\n")
         return
-
-    # 3. Gather all YES token IDs and map them to condition IDs
-    import json
-    token_to_condition = {}
-    for event in events:
-        for market in event.get("markets", []):
-            cond_id = market.get("conditionId") or market.get("condition_id")
-            token_ids_str = market.get("clobTokenIds")
-            if cond_id and token_ids_str:
-                try:
-                    token_ids = json.loads(token_ids_str)
-                    if token_ids and len(token_ids) > 0:
-                        yes_token_id = str(token_ids[0])
-                        token_to_condition[yes_token_id] = str(cond_id)
-                except (json.JSONDecodeError, TypeError):
-                    continue
-
-    token_ids = list(token_to_condition.keys())
-    raw_prices = polymarket_client.get_market_prices(token_ids)
-    
-    # Map raw token prices back to condition IDs for the scanner
-    prices = {token_to_condition[tid]: price for tid, price in raw_prices.items()}
 
     # 4. Fetch live game states via Sports WebSocket
     game_states = sports_ws.get_live_game_states()

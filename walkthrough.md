@@ -34,6 +34,10 @@ Arsenal vs Chelsea   83'  2 - 0  Arsenal   82%     94%       +12%  ← BET
     python main.py
     ```
 
+## Repository Link
+
+You can find the source code at: **[matheusgr76/Minutebid](https://github.com/matheusgr76/Minutebid)**
+
 > [!TIP]
 > Run the script during a busy match window (e.g., Saturday morning) to see live qualifying opportunities in the 75-90 min range.
 

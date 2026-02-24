@@ -2,6 +2,7 @@
 # Takes raw data from all clients and returns actionable opportunities.
 
 import logging
+import difflib
 from config import MIN_MINUTE, MAX_MINUTE, WIN_PROB_THRESHOLD, MIN_EDGE_THRESHOLD
 
 logger = logging.getLogger(__name__)
@@ -23,18 +24,6 @@ def filter_opportunities(
 
     Edge (Reference prob - Polymarket prob) is computed when Reference data is available.
     Opportunities with positive edge are flagged; all qualifying matches are shown.
-
-    Each opportunity dict:
-        {
-            "match":           str,
-            "minute":          int,
-            "score":           str,    # "2 - 0"
-            "leader":          str,    # outcome name with highest probability
-            "poly_prob":       float,  # e.g. 0.82
-            "reference_prob":  float|None,
-            "edge":            float|None,  # reference_prob - poly_prob
-            "market_url":      str,
-        }
     """
     opportunities = []
 
@@ -105,25 +94,57 @@ def _lookup_reference_prob(
     reference_prices: dict[str, dict],
 ) -> float | None:
     """
-    Try to match this event to a Reference market by event title similarity,
+    Try to match this event to a Reference market using fuzzy matching,
     then return the probability for the matching outcome.
     """
     event_title = event.get("title", "").lower()
+    
+    # 1. Find the best matching event
+    best_event_match = None
+    best_event_score = 0.0
+    
+    for ref_event_name in reference_prices.keys():
+        score = _calculate_similarity(event_title, ref_event_name.lower())
+        if score > best_event_score:
+            best_event_score = score
+            best_event_match = ref_event_name
 
-    for ref_event_name, outcomes in reference_prices.items():
-        if not _titles_overlap(event_title, ref_event_name):
-            continue
-        outcome_lower = outcome_name.lower()
-        for ref_outcome_name, prob in outcomes.items():
-            if ref_outcome_name in outcome_lower or outcome_lower in ref_outcome_name:
-                return prob
+    # Threshold for event matching: 0.6 is usually safe for team names
+    if not best_event_match or best_event_score < 0.6:
+        return None
+
+    # 2. Find the best matching outcome within that event
+    outcomes = reference_prices[best_event_match]
+    outcome_lower = outcome_name.lower()
+    
+    # Simple check first: Does the team name appear in the question?
+    # e.g. "Will Liverpool win?" matches "Liverpool"
+    best_outcome_match = None
+    best_outcome_score = 0.0
+
+    for ref_outcome_name, prob in outcomes.items():
+        ref_lower = ref_outcome_name.lower()
+        # Direct containment is common
+        if ref_lower in outcome_lower or outcome_lower in ref_lower:
+            return prob
+            
+        # Fuzzy fallback for outcomes
+        score = _calculate_similarity(outcome_lower, ref_lower)
+        if score > best_outcome_score:
+            best_outcome_score = score
+            best_outcome_match = prob
+            
+    if best_outcome_score > 0.5:
+        return best_outcome_match
 
     return None
 
 
-def _titles_overlap(title_a: str, title_b: str) -> bool:
-    """Return True if the two event titles share at least one significant word."""
+def _calculate_similarity(a: str, b: str) -> float:
+    """Return a similarity score between 0.0 and 1.0."""
+    # Remove common junk words
     stop_words = {"vs", "v", "fc", "the", "a", "an", "and", "&"}
-    words_a = {w for w in title_a.split() if w not in stop_words and len(w) > 2}
-    words_b = {w for w in title_b.split() if w not in stop_words and len(w) > 2}
-    return bool(words_a & words_b)
+    a_clean = " ".join([w for w in a.split() if w not in stop_words])
+    b_clean = " ".join([w for w in b.split() if w not in stop_words])
+    
+    return difflib.SequenceMatcher(None, a_clean, b_clean).ratio()

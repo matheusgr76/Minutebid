@@ -104,5 +104,5 @@
 - [x] THINK: Research cloud vs local options and risks ✅
 - [x] EXECUTE: Create `Dockerfile` and `setup_vps.sh` (Archived for future) ✅
 - [x] DECISION: Option 2 - Local Windows Persistence ✅
-- [ ] EXECUTE: Implement `SetThreadExecutionState` in `scheduler.py`
-- [ ] VERIFY: Run bot and check if PC stays awake while monitor is off
+- [x] EXECUTE: Implement `SetThreadExecutionState` in `scheduler.py` ✅
+- [x] VERIFY: Run bot and check if PC stays awake while monitor is off ✅

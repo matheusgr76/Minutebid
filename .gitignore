@@ -2,3 +2,5 @@
 __pycache__/
 *.py[cod]
 *.log
+.dashboard_msg_id
+debug_schedule.py

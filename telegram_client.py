@@ -122,18 +122,24 @@ def _save_dashboard_id(msg_id: int):
 def update_scheduler_dashboard(runs: list) -> None:
     """
     Sends or updates a single dashboard message with the current schedule and countdowns.
+    Limits to the next 15 games to avoid Telegram's 4096 character limit.
     """
     from datetime import datetime, timezone
     
     now = datetime.now(timezone.utc)
+    MAX_GAMES_DISPLAYED = 15
     
     msg = "📅 *MONITORED GAMES DASHBOARD*\n"
-    msg += f"Last updated: {now.strftime('%H:%M:%S')} UTC\n\n"
+    msg += f"Last updated: {now.strftime('%H:%M:%S')} UTC\n"
+    msg += f"Total games monitored today: {len(runs)}\n\n"
     
     if not runs:
         msg += "No games currently being monitored. 😴"
     else:
-        for run in runs:
+        # Show only the next N games
+        display_runs = runs[:MAX_GAMES_DISPLAYED]
+        
+        for run in display_runs:
             wakeup = run['wakeup_time']
             diff = wakeup - now
             
@@ -150,6 +156,9 @@ def update_scheduler_dashboard(runs: list) -> None:
             
             msg += f"🏟 *{run['title']}*\n"
             msg += f"⏰ Wakeup: {wakeup.strftime('%H:%M')} UTC | ⏳ *{t_minus}*\n\n"
+        
+        if len(runs) > MAX_GAMES_DISPLAYED:
+            msg += f"_...and {len(runs) - MAX_GAMES_DISPLAYED} more games scheduled._"
 
     last_id = _get_last_dashboard_id()
     if last_id:

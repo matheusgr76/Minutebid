@@ -52,10 +52,10 @@ All modules wired, imports verified, dependencies installed.
 - Implemented `rapidfuzz.token_set_ratio` to handle variations like "Arsenal FC" vs "Arsenal".
 - Added automated normalization for common soccer suffixes.
 
-### Phase 8 — Enhanced Scheduler Monitoring
-- Implement `send_schedule_summary` to notify user via Telegram of all monitored games for the next 24h.
-- Include countdowns (T-minus) for each match kickoff/wakeup window.
-- Update `scheduler.py` to trigger this report after each discovery cycle.
+### Phase 8 — Enhanced Scheduler Monitoring ✅
+- Implemented `update_scheduler_dashboard` in `telegram_client.py`: sends/edits a single live message with T-minus countdowns, capped at 15 games to respect Telegram's 4096-char limit.
+- Dashboard update throttled to every 300s (5 min) — countdown precision does not require sub-minute updates; real-time opportunity delivery is handled by `send_opportunity_alert`.
+- `scheduler.py` calls dashboard on a 300s timer, independent of the 1-hour discovery cycle and 15s scan cycle.
 
 ---
 
@@ -121,16 +121,16 @@ graph TD
 #### [MODIFY] [config.py](file:///c:/Python/Projects/PLYM_Bots/Minutebid/config.py)
 - Add discovery thresholds and scheduling constants.
 
-## Phase 8 - Scheduler UI (Telegram)
+## Phase 8 - Scheduler UI (Telegram) ✅
 
 ### [Component] Telegram Client
-#### [MODIFY] [telegram_client.py](file:///c:/Python/Projects/PLYM_Bots/Minutebid/telegram_client.py)
-- Add `send_schedule_summary(runs)` to format and send a list of monitored games.
+#### [DONE] [telegram_client.py](file:///c:/Python/Projects/PLYM_Bots/Minutebid/telegram_client.py)
+- `update_scheduler_dashboard(runs)`: sends or edits a single live Telegram message with T-minus countdowns. Capped at 15 games. Persists message ID to `.dashboard_msg_id` for in-place edits.
 
 ### [Component] Orchestration
-#### [MODIFY] [scheduler.py](file:///c:/Python/Projects/PLYM_Bots/Minutebid/scheduler.py)
-- Call `send_schedule_summary` after `get_upcoming_runs()`.
-- Ensure redundant updates are minimized (only send when schedule changes).
+#### [DONE] [scheduler.py](file:///c:/Python/Projects/PLYM_Bots/Minutebid/scheduler.py)
+- Dashboard update throttled to 300s interval via `last_dashboard_update` tracker.
+- Discovery (1h), dashboard (5m), and scan (15s) cycles are fully independent.
 
 ## Verification Plan
 

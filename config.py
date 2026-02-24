@@ -28,6 +28,7 @@ LEAGUE_TAG_SLUGS = {
 MIN_MINUTE = 75        # Only consider matches at or after this minute
 MAX_MINUTE = 120       # Covers 90 + extra time
 WIN_PROB_THRESHOLD = 0.80  # Minimum implied probability to surface a market
+MAX_SCHEDULE_HOURS = 48    # Only monitor matches starting within this window
 
 # ---------------------------------------------------------------------------
 # Network settings

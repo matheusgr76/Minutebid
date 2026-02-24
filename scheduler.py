@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import polymarket_client
 import main
 import telegram_client
-from config import MIN_MINUTE, MAX_MINUTE
+from config import MIN_MINUTE, MAX_MINUTE, MAX_SCHEDULE_HOURS
 
 logger = logging.getLogger("scheduler")
 
@@ -46,6 +46,10 @@ def get_upcoming_runs() -> list[dict]:
             if now > end:
                 continue
                 
+            # Skip matches scheduled too far in the future (Time Horizon Filter)
+            if kickoff > now + timedelta(hours=MAX_SCHEDULE_HOURS):
+                continue
+                
             upcoming.append({
                 "title": match.get("title"),
                 "kickoff": kickoff,
@@ -67,22 +71,26 @@ def run_scheduler_loop():
     telegram_client.send_status_update("Smart Scheduler Started 🚀")
     
     last_discovery_time = 0
+    last_dashboard_update = 0
     discovery_interval = 3600  # 1 hour
+    dashboard_interval = 300   # 5 minutes — countdown precision doesn't need sub-minute updates
     runs = []
-    
+
     while True:
         now_ts = time.time()
-        
+
         # 1. Periodically fetch soccer schedule (Discovery)
         if now_ts - last_discovery_time > discovery_interval:
             runs = get_upcoming_runs()
             last_discovery_time = now_ts
             logger.info("Discovery cycle complete. %d matches found.", len(runs))
-            
+
         now = datetime.now(timezone.utc)
-        
-        # 2. Update Telegram and check for active windows
-        telegram_client.update_scheduler_dashboard(runs)
+
+        # 2. Periodically update Telegram dashboard (not every tick)
+        if now_ts - last_dashboard_update > dashboard_interval:
+            telegram_client.update_scheduler_dashboard(runs)
+            last_dashboard_update = now_ts
         
         if not runs:
             logger.info("No more matches scheduled. Sleeping before re-discovery.")

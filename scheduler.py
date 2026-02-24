@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 import polymarket_client
 import main
+import telegram_client
 from config import MIN_MINUTE, MAX_MINUTE
 
 logger = logging.getLogger("scheduler")
@@ -63,6 +64,7 @@ def run_scheduler_loop():
     """Main loop that sleeps and wakes up for match windows."""
     load_dotenv()
     logger.info("Starting Smart Scheduler Loop...")
+    telegram_client.send_status_update("Smart Scheduler Started 🚀")
     
     while True:
         runs = get_upcoming_runs()
@@ -78,6 +80,7 @@ def run_scheduler_loop():
         # 1. Are we currently inside a window?
         if next_run["wakeup_time"] <= now <= next_run["end_time"]:
             logger.info("!!! WAKING UP for match: %s", next_run["title"])
+            telegram_client.send_status_update(f"Waking up for: {next_run['title']} 🏟")
             logger.info("Target window: %s to %s", 
                         next_run["wakeup_time"].strftime("%H:%M UTC"),
                         next_run["end_time"].strftime("%H:%M UTC"))

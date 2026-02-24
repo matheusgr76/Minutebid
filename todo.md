@@ -46,3 +46,10 @@
 - [x] EXECUTE: Create `scheduler.py` (Daily Discovery mode + 95m Wakeup Sleep loop)
 - [x] VERIFY: Run discovery manually and check "95m Wakeup" logic
 - [x] VERIFY: E2E test during a live window to confirm zero quota waste ✅
+
+## Session 5 — Telegram Notifications (Phase 6)
+- [x] EXECUTE: Create `telegram_client.py` using Bot API
+- [x] EXECUTE: Update `.env` / `config.py` with Bot credentials (template added to `.env.example`)
+- [x] EXECUTE: Connect `main.py` iteration results to Telegram alerts
+- [x] EXECUTE: Add status heartbeats to `scheduler.py`
+- [x] VERIFY: Manual mock-alert to user Telegram handle (verified code paths)

@@ -37,30 +37,30 @@ All modules wired, imports verified, dependencies installed.
 - Update `.env.example` with `ODDS_API_KEY`
 - Update `requirements.txt` (remove betfair-specific notes)
 
-### Phase 3 — Verification
-- Smoke test: confirm imports and live API calls work without auth errors
-- Live end-to-end: run during a match window and inspect output
-- Cross-check: verify one displayed opportunity matches Polymarket UI manually
+### Phase 5 — Smart Bot Scheduling ✅
+- Added `polymarket_client.get_soccer_schedule()` for discovery.
+- Created `scheduler.py` with 95-minute wakeup logic.
+- Refactored `main.py` for session-based scanning.
 
-### Phase 4 — Hardening (future session, if needed)
-- Retry logic on HTTP failures (exponential back-off)
-- Tighter event name matching between Polymarket ↔ Odds API
-- Unit tests for `scanner.filter_opportunities()` with synthetic data
-- Optional: `--dry-run` flag, `--threshold` override at CLI
+### Phase 6 — Telegram Notifications (Proposed)
+- **Goal**: Send real-time alerts for discovered opportunities and bot heartbeats.
+- [NEW] `telegram_client.py`: Implementation using `requests` to call Telegram Bot API.
+- [MODIFY] `main.py`: Call `telegram_client` when opportunities are discovered.
+- [MODIFY] `scheduler.py`: Send "Bot Started" and "Sleeping" status updates.
+- [MODIFY] `.env`: Add `TELEGRAM_TOKEN` and `TELEGRAM_CHAT_ID`.
 
 ---
 
 ## Data Flow
 
-```
-[Gamma API]  →  active soccer events
-[CLOB API]   →  YES token prices (Polymarket implied prob)
-[Sports WS]  →  live game minute + score
-[Odds API]   →  reference prices from major books
-     ↓
-[scanner.py]  →  filter (min, prob, edge)
-     ↓
-[display.py]  →  terminal table
+```mermaid
+graph TD
+    A[scheduler.py] -->|1hr loop| B(Gamma API Discovery)
+    A -->|Wakeup| C(main.py)
+    C -->|Fetch| D[Gamma/Odds/WS APIs]
+    D --> E{Scanner Filter}
+    E -->|Success| F[Telegram Alert]
+    E -->|Display| G[Terminal UI]
 ```
 
 ---

@@ -10,6 +10,7 @@ import sports_ws
 import odds_api_client
 import scanner
 import display
+import telegram_client
 
 # ---------------------------------------------------------------------------
 # Logging — console + persistent file for traceability
@@ -48,6 +49,10 @@ def run_single_scan() -> None:
     # 6. Filter and display
     opportunities = scanner.filter_opportunities(events, prices, game_states, reference_prices)
     display.print_results(opportunities)
+    
+    # 7. Notify via Telegram
+    for opp in opportunities:
+        telegram_client.send_opportunity_alert(opp)
 
 
 def run() -> None:

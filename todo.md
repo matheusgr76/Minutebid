@@ -101,8 +101,7 @@
 ---
 
 ## Session 11 — Always On (Local Windows Persistence)
-- [x] THINK: Research cloud vs local options and risks ✅
-- [x] EXECUTE: Create `Dockerfile` and `setup_vps.sh` (Archived for future) ✅
-- [x] DECISION: Option 2 - Local Windows Persistence ✅
-- [x] EXECUTE: Implement `SetThreadExecutionState` in `scheduler.py` ✅
-- [x] VERIFY: Run bot and check if PC stays awake while monitor is off ✅
+- [x] THINK: Research options and billing risks ✅
+- [x] EXECUTE: Implement Windows sleep prevention ✅
+- [x] VERIFY: Confirm 24/7 persistence via Telegram ✅
+- [x] CLEANUP: Remove unused cloud config files (Dockerfile, scripts) ✅

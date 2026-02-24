@@ -29,6 +29,8 @@ MIN_MINUTE = 75        # Only consider matches at or after this minute
 MAX_MINUTE = 120       # Covers 90 + extra time
 WIN_PROB_THRESHOLD = 0.80  # Minimum implied probability to surface a market
 MAX_SCHEDULE_HOURS = 48    # Only monitor matches starting within this window
+SCAN_INTERVAL_SLOW = 120   # 2-minute "Slow Pulse" interval during active monitoring
+RESOLVED_ODDS_THRESHOLD = 1.05 # Trigger alert if bookie odds drop below this (Consensus)
 
 # ---------------------------------------------------------------------------
 # Network settings

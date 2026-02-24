@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import polymarket_client
 import main
 import telegram_client
-from config import MIN_MINUTE, MAX_MINUTE, MAX_SCHEDULE_HOURS
+from config import MIN_MINUTE, MAX_MINUTE, MAX_SCHEDULE_HOURS, SCAN_INTERVAL_SLOW
 
 logger = logging.getLogger("scheduler")
 
@@ -77,8 +77,19 @@ def run_scheduler_loop():
     last_discovery_time = 0
     last_dashboard_update = 0
     discovery_interval = 3600  # 1 hour
-    dashboard_interval = 300   # 5 minutes — countdown precision doesn't need sub-minute updates
+    dashboard_interval = 120   # 2 minutes — better responsiveness for live monitoring
     runs = []
+
+    def _check_dashboard(runs_list: list):
+        """Helper to update the Telegram dashboard if interval passed."""
+        nonlocal last_dashboard_update
+        now_ts = time.time()
+        if now_ts - last_dashboard_update > dashboard_interval:
+            try:
+                telegram_client.update_scheduler_dashboard(runs_list)
+            except Exception as e:
+                logger.error("Dashboard update failed: %s", e)
+            last_dashboard_update = now_ts
 
     while True:
         now_ts = time.time()
@@ -95,21 +106,15 @@ def run_scheduler_loop():
                 logger.info("Next Match: %s | Kickoff: %s (BR) | Wakeup: %s (BR)", 
                             next_m['title'], br_kickoff.strftime('%H:%M'), br_wakeup.strftime('%H:%M'))
 
-        now = datetime.now(timezone.utc)
-
-        # 2. Periodically update Telegram dashboard (not every tick)
-        if now_ts - last_dashboard_update > dashboard_interval:
-            try:
-                telegram_client.update_scheduler_dashboard(runs)
-            except Exception as e:
-                logger.error("Dashboard update failed: %s", e)
-            last_dashboard_update = now_ts
+        # 2. Update Telegram dashboard periodically
+        _check_dashboard(runs)
         
         if not runs:
             logger.info("No more matches scheduled. Sleeping before re-discovery.")
             time.sleep(60)
             continue
 
+        now = datetime.now(timezone.utc)
         active_run = None
         for run in runs:
             if run["wakeup_time"] <= now <= run["end_time"]:
@@ -128,14 +133,17 @@ def run_scheduler_loop():
                 except Exception as e:
                     logger.error("Error during scan session: %s", e)
                 
-                # Scan every 15 seconds during active window
-                time.sleep(15)
+                # Check for dashboard update even during active session
+                _check_dashboard(runs)
+                
+                # Scan on a slow pulse (e.g. 120s) during active window
+                time.sleep(SCAN_INTERVAL_SLOW)
                 
             logger.info("Session finished for %s. Re-running discovery.", active_run["title"])
             last_discovery_time = 0 # Force discovery after a session
             continue
 
-        # 3. If no match is active, sleep and update dashboard
+        # 3. If no match is active, sleep (60s check for dashboard/active runs)
         time.sleep(60)
 
 

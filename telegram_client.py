@@ -69,31 +69,29 @@ def edit_message(text: str, message_id: int) -> bool:
 
 def send_opportunity_alert(opp: dict) -> None:
     """
-    Formats and sends a high-priority opportunity alert.
+    Formats and sends a high-priority opportunity alert based on bookie resolution.
     """
     # Header
-    msg = f"⚽ *MINUTEBID OPPORTUNITY FOUND!*\n\n"
+    msg = f"⚽ *STATISTICALLY RESOLVED MATCH!*\n\n"
     
     # Match Info
-    msg += f"🏟 *Match:* {opp.get('event_title', 'Unknown')}\n"
+    msg += f"🏟 *Match:* {opp.get('match', 'Unknown')}\n"
     msg += f"⏱ *Minute:* {opp.get('minute', '?')}\n"
-    msg += f"📊 *Outcome:* {opp.get('outcome_name', 'Yes')}\n\n"
+    msg += f"📊 *Score:* {opp.get('score', '?')}\n\n"
     
-    # Price Info
-    poly_prob = opp.get('implied_prob', 0) * 100
-    ref_prob = opp.get('ref_implied_prob', 0) * 100
-    edge = opp.get('edge', 0) * 100
+    # Resolution Info
+    msg += f"🔥 *Resolved Outcome:* {opp.get('resolved_outcome', 'Yes')}\n"
     
-    msg += f"📍 *Polymarket:* {poly_prob:.1f}% (${opp.get('price', 0):.2f})\n"
-    msg += f"📈 *Reference:* {ref_prob:.1f}%\n"
-    msg += f"🔥 *EDGE:* {edge:.1f}%\n\n"
+    ref_prob = opp.get('reference_prob', 0) * 100
+    poly_prob = (opp.get('poly_prob') * 100) if opp.get('poly_prob') is not None else 0
     
-    # Link
-    event_id = opp.get('event_id')
-    if event_id:
-        # Note: This is an example Gamma URL structure, adjust if needed
-        link = f"https://polymarket.com/event/{event_id}"
-        msg += f"[View on Polymarket]({link})"
+    msg += f"📈 *Bookie Consensus:* {ref_prob:.1f}%\n"
+    if opp.get('poly_prob') is not None:
+        msg += f"📍 *Polymarket Price:* {poly_prob:.1f}% (${opp.get('poly_prob', 0):.2f})\n"
+    else:
+        msg += f"📍 *Polymarket Price:* Not found\n"
+    
+    msg += f"\n[View on Polymarket]({opp.get('market_url', 'https://polymarket.com')})"
         
     send_message(msg)
 
@@ -124,7 +122,7 @@ def update_scheduler_dashboard(runs: list) -> None:
     Sends or updates a single dashboard message with the current schedule and countdowns.
     Limits to the next 15 games to avoid Telegram's 4096 character limit.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime, timezone, timedelta
     
     now = datetime.now(timezone.utc)
     MAX_GAMES_DISPLAYED = 15

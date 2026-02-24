@@ -9,15 +9,25 @@ _HEADERS = ["Match", "Min", "Score", "Leader", "Poly%", "Betfair%", "Edge"]
 
 
 def print_results(opportunities: list[dict]) -> None:
-    """Print a formatted table of opportunities. Clear message if none found."""
+    """Prints a clean, formatted table of opportunities to the terminal."""
     if not opportunities:
-        print("\n  ⚽  No qualifying matches right now. Try again during 75-90 min.\n")
+        print("\n[INFO] No statistically resolved matches detected.")
         return
 
-    rows = [_format_row(op) for op in opportunities]
-    # match the look and feel requested - simple table
-    print("\n" + tabulate(rows, headers=_HEADERS, tablefmt="plain"))
-    print(f"\n  {len(opportunities)} opportunity(ies) found.\n")
+    print("\n" + "="*80)
+    print(f"{'STATISTICALLY RESOLVED MATCHES':^80}")
+    print("="*80)
+    
+    header = f"{'MATCH':<30} | {'MIN':<3} | {'SCORE':<5} | {'RESOLVED':<15} | {'BOOKIE%'}"
+    print(header)
+    print("-" * len(header))
+
+    for opp in opportunities:
+        ref_p = f"{opp['reference_prob']*100:>6.1f}%"
+        
+        print(f"{opp['match'][:30]:<30} | {opp['minute']:<3} | {opp['score']:<5} | {opp['resolved_outcome'][:15]:<15} | {ref_p}")
+
+    print("="*80 + "\n")
 
 
 def _format_row(op: dict) -> list:

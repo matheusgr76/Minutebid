@@ -78,3 +78,22 @@
 - [x] EXECUTE: Enhance error handling in `telegram_client.py`
 - [x] EXECUTE: Convert all displays (Dashboard, Logs) to UTC-3 (Brasilia Time)
 - [x] VERIFY: Restart scheduler and confirm dashboard updates in UTC-3
+- [x] Merge `hotfix/wakeup-and-stability` into `main` ✅
+
+---
+
+## Session 9 — Slow Pulse Monitoring (Phase 9)
+- [x] Create feature branch `feature/slow-pulse-monitoring` ✅
+- [x] EXECUTE: Add constants to `config.py` (`SCAN_INTERVAL_SLOW`, `RESOLVED_ODDS_THRESHOLD`) ✅
+- [x] EXECUTE: Modify `scheduler.py` to use `SCAN_INTERVAL_SLOW` (120s) during active sessions ✅
+- [x] EXECUTE: Simplify `scanner.py` to focus on bookmaker odds threshold instead of edge/prob ✅
+- [x] EXECUTE: Update `main.py` to reflect the simplified scanning flow ✅
+- [x] VERIFY: Run bot and verify 2-minute cadence and threshold detection ✅
+
+---
+
+## Session 10 — Dashboard Reliability (Phase 10)
+- [x] Refactor `scheduler.py` to move dashboard update logic into a helper function. ✅
+- [x] Inject the helper function into the active monitoring loop. ✅
+- [x] Reduce `dashboard_interval` to 120s for better responsiveness. ✅
+- [x] Verify that the dashboard updates while a match is "ACTIVE". ✅

@@ -1,7 +1,7 @@
 # Minutebid — Implementation Plan
 
 ## Goal
-A manually-triggered Python script that scans Polymarket for live soccer markets in minutes 75–90+, surfaces outcomes with >80% implied win probability, and cross-references The Odds API to detect mispriced opportunities (edge).
+A manually-triggered Python script that scans soccer markets. It uses a **"Slow Pulse" strategy**: waking up at Minute 80, checking every 2 minutes, and surfacing outcomes where bookmaker odds hit a "Statistically Resolved" threshold (e.g., < 1.05), implying high confidence in the final result.
 
 ---
 
@@ -54,8 +54,12 @@ All modules wired, imports verified, dependencies installed.
 
 ### Phase 8 — Enhanced Scheduler Monitoring ✅
 - Implemented `update_scheduler_dashboard` in `telegram_client.py`: sends/edits a single live message with T-minus countdowns, capped at 15 games to respect Telegram's 4096-char limit.
-- Dashboard update throttled to every 300s (5 min) — countdown precision does not require sub-minute updates; real-time opportunity delivery is handled by `send_opportunity_alert`.
-- `scheduler.py` calls dashboard on a 300s timer, independent of the 1-hour discovery cycle and 15s scan cycle.
+- Dashboard update throttled to every 300s (5 min).
+
+### Phase 9 — Slow Pulse Monitoring (Strategic Pivot) [/]
+- Reduce scan frequency to **120 seconds** (2 minutes) to conserve API quota.
+- Pivot from "Edge Hunting" to **"Consensus Following"**: trigger alerts when bookmaker odds for a favorite drop below a resolution threshold (e.g., 1.05).
+- Simplify scanner logic: verify bookmaker consensus late in the game (Minute 80+) and notify for manual execution on Polymarket.
 
 ---
 

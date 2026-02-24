@@ -13,10 +13,14 @@ from config import MIN_MINUTE, MAX_MINUTE, MAX_SCHEDULE_HOURS
 
 logger = logging.getLogger("scheduler")
 
-# Kickoff + 95 minutes = target start of scanning (around Minute 75 match clock)
-WAKEUP_DELAY_MINUTES = 95
-# Duration of a scanning session (from Minute 75 to ~Minute 105 real-time)
-SESSION_DURATION_MINUTES = 30 
+# Kickoff + 80 minutes = target start of scanning (around Minute 65+ match clock)
+WAKEUP_DELAY_MINUTES = 80
+# Duration of a scanning session (from Minute 65 to ~Minute 100 real-time)
+SESSION_DURATION_MINUTES = 35 
+
+def get_br_time(utc_dt: datetime) -> datetime:
+    """Convert UTC datetime to Brasilia Time (UTC-3)."""
+    return utc_dt.astimezone(timezone(timedelta(hours=-3)))
 
 
 def get_upcoming_runs() -> list[dict]:
@@ -84,12 +88,21 @@ def run_scheduler_loop():
             runs = get_upcoming_runs()
             last_discovery_time = now_ts
             logger.info("Discovery cycle complete. %d matches found.", len(runs))
+            if runs:
+                next_m = runs[0]
+                br_kickoff = get_br_time(next_m['kickoff'])
+                br_wakeup = get_br_time(next_m['wakeup_time'])
+                logger.info("Next Match: %s | Kickoff: %s (BR) | Wakeup: %s (BR)", 
+                            next_m['title'], br_kickoff.strftime('%H:%M'), br_wakeup.strftime('%H:%M'))
 
         now = datetime.now(timezone.utc)
 
         # 2. Periodically update Telegram dashboard (not every tick)
         if now_ts - last_dashboard_update > dashboard_interval:
-            telegram_client.update_scheduler_dashboard(runs)
+            try:
+                telegram_client.update_scheduler_dashboard(runs)
+            except Exception as e:
+                logger.error("Dashboard update failed: %s", e)
             last_dashboard_update = now_ts
         
         if not runs:

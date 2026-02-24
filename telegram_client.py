@@ -130,7 +130,9 @@ def update_scheduler_dashboard(runs: list) -> None:
     MAX_GAMES_DISPLAYED = 15
     
     msg = "📅 *MONITORED GAMES DASHBOARD*\n"
-    msg += f"Last updated: {now.strftime('%H:%M:%S')} UTC\n"
+    # Convert to Brasilia Time (UTC-3)
+    br_now = now.astimezone(timezone(timedelta(hours=-3)))
+    msg += f"Last updated: {br_now.strftime('%H:%M:%S')} (UTC-3)\n"
     msg += f"Total games monitored today: {len(runs)}\n\n"
     
     if not runs:
@@ -154,8 +156,9 @@ def update_scheduler_dashboard(runs: list) -> None:
                 else:
                     t_minus = f"T-{minutes}m {seconds}s"
             
+            br_wakeup = wakeup.astimezone(timezone(timedelta(hours=-3)))
             msg += f"🏟 *{run['title']}*\n"
-            msg += f"⏰ Wakeup: {wakeup.strftime('%H:%M')} UTC | ⏳ *{t_minus}*\n\n"
+            msg += f"⏰ Wakeup: {br_wakeup.strftime('%H:%M')} (UTC-3) | ⏳ *{t_minus}*\n\n"
         
         if len(runs) > MAX_GAMES_DISPLAYED:
             msg += f"_...and {len(runs) - MAX_GAMES_DISPLAYED} more games scheduled._"

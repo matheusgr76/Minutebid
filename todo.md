@@ -68,3 +68,13 @@
 - [x] FIX: Throttle `update_scheduler_dashboard` to 300s interval — dashboard is monitoring-only; alerts handle real-time opportunity delivery
 - [x] VERIFY: Run scheduler and verify Telegram dashboard output and update cadence ✅
 - [x] FIX: Deduplicate schedule entries by normalized title — Polymarket emits "Match X" and "Match X - More Markets" as separate events; strip known suffixes and check `seen_titles` to keep only the canonical entry
+
+---
+
+## Session 8 — Hotfix: Wakeup Delay & Stability
+- [x] Create hotfix branch `hotfix/wakeup-and-stability` off `main`
+- [x] EXECUTE: Reduce `WAKEUP_DELAY_MINUTES` to 80 in `scheduler.py`
+- [x] EXECUTE: Add try/except to `update_scheduler_dashboard` in `scheduler.py`
+- [x] EXECUTE: Enhance error handling in `telegram_client.py`
+- [x] EXECUTE: Convert all displays (Dashboard, Logs) to UTC-3 (Brasilia Time)
+- [x] VERIFY: Restart scheduler and confirm dashboard updates in UTC-3

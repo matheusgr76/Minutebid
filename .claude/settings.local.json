@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout -b feature/phase8-scheduler-ui)",
+      "Bash(git add config.py scheduler.py telegram_client.py todo.md implementation_plan.md .gitignore)"
+    ]
+  }
+}

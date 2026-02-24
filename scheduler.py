@@ -66,27 +66,41 @@ def run_scheduler_loop():
     logger.info("Starting Smart Scheduler Loop...")
     telegram_client.send_status_update("Smart Scheduler Started 🚀")
     
+    last_discovery_time = 0
+    discovery_interval = 3600  # 1 hour
+    runs = []
+    
     while True:
-        runs = get_upcoming_runs()
+        now_ts = time.time()
         
-        if not runs:
-            logger.info("No more matches scheduled for today. Sleeping 1 hour before re-discovery.")
-            time.sleep(3600)
-            continue
+        # 1. Periodically fetch soccer schedule (Discovery)
+        if now_ts - last_discovery_time > discovery_interval:
+            runs = get_upcoming_runs()
+            last_discovery_time = now_ts
+            logger.info("Discovery cycle complete. %d matches found.", len(runs))
             
         now = datetime.now(timezone.utc)
-        next_run = runs[0]
         
-        # 1. Are we currently inside a window?
-        if next_run["wakeup_time"] <= now <= next_run["end_time"]:
-            logger.info("!!! WAKING UP for match: %s", next_run["title"])
-            telegram_client.send_status_update(f"Waking up for: {next_run['title']} 🏟")
-            logger.info("Target window: %s to %s", 
-                        next_run["wakeup_time"].strftime("%H:%M UTC"),
-                        next_run["end_time"].strftime("%H:%M UTC"))
+        # 2. Update Telegram and check for active windows
+        telegram_client.update_scheduler_dashboard(runs)
+        
+        if not runs:
+            logger.info("No more matches scheduled. Sleeping before re-discovery.")
+            time.sleep(60)
+            continue
+
+        active_run = None
+        for run in runs:
+            if run["wakeup_time"] <= now <= run["end_time"]:
+                active_run = run
+                break
+        
+        if active_run:
+            logger.info("!!! WAKING UP for match: %s", active_run["title"])
+            telegram_client.send_status_update(f"Waking up for: {active_run['title']} 🏟")
             
             # Start frequent scanning session
-            session_end = next_run["end_time"]
+            session_end = active_run["end_time"]
             while datetime.now(timezone.utc) < session_end:
                 try:
                     main.run_single_scan()
@@ -96,26 +110,12 @@ def run_scheduler_loop():
                 # Scan every 15 seconds during active window
                 time.sleep(15)
                 
-            logger.info("Session finished for %s. Moving to next match.", next_run["title"])
+            logger.info("Session finished for %s. Re-running discovery.", active_run["title"])
+            last_discovery_time = 0 # Force discovery after a session
             continue
 
-        # 2. If it's too early for the next match, sleep until it
-        time_to_wait = (next_run["wakeup_time"] - now).total_seconds()
-        
-        if time_to_wait > 0:
-            logger.info("Next match: %s", next_run["title"])
-            logger.info("Kickoff: %s | Wakeup: %s", 
-                        next_run["kickoff"].strftime("%H:%M UTC"),
-                        next_run["wakeup_time"].strftime("%H:%M UTC"))
-            
-            # Log waiting time in hours/minutes
-            hours, remainder = divmod(int(time_to_wait), 3600)
-            minutes, _ = divmod(remainder, 60)
-            logger.info("Sleeping for %dh %dm...", hours, minutes)
-            
-            # Sleep at most 1 hour to re-check discovery occasionally
-            sleep_duration = min(time_to_wait, 3600)
-            time.sleep(sleep_duration)
+        # 3. If no match is active, sleep and update dashboard
+        time.sleep(60)
 
 
 if __name__ == "__main__":

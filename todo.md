@@ -61,3 +61,8 @@
 - [x] EXECUTE: Implement name normalization (lowercase, trim suffixes like "FC" or "United")
 - [x] EXECUTE: Update `scanner.py` to use fuzzy thresholds (Token Set Ratio) when exact match fails
 - [x] VERIFY: Run tests with a list of known variations (e.g., "Arsenal FC" vs "Arsenal") ✅
+## Session 7 — Scheduler UI (Telegram Monitoring)
+- [ ] THINK: Design Telegram summary format with countdowns
+- [ ] EXECUTE: Update `telegram_client.py` with `send_schedule_summary`
+- [ ] EXECUTE: Update `scheduler.py` to notify on discovery
+- [ ] VERIFY: Run scheduler and verify Telegram output format

@@ -7,17 +7,17 @@ from typing import Optional
 
 logger = logging.getLogger("telegram")
 
-def send_message(text: str) -> bool:
+def send_message(text: str) -> Optional[int]:
     """
     Sends a generic text message to the configured Telegram chat.
-    Returns True if successful, False otherwise.
+    Returns the message_id if successful, None otherwise.
     """
     token = os.getenv("TELEGRAM_TOKEN", "").strip()
     chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
     
     if not token or not chat_id:
         logger.warning("Telegram credentials missing in .env. Skipping notification.")
-        return False
+        return None
         
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
@@ -31,9 +31,40 @@ def send_message(text: str) -> bool:
         if response.status_code != 200:
             logger.error("Telegram API Error (%s): %s", response.status_code, response.text)
         response.raise_for_status()
-        return True
+        return response.json().get("result", {}).get("message_id")
     except Exception as e:
         logger.error("Failed to send Telegram message: %s", e)
+        return None
+
+def edit_message(text: str, message_id: int) -> bool:
+    """
+    Edits an existing Telegram message.
+    """
+    token = os.getenv("TELEGRAM_TOKEN", "").strip()
+    chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+    
+    if not token or not chat_id:
+        return False
+        
+    url = f"https://api.telegram.org/bot{token}/editMessageText"
+    payload = {
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "text": text,
+        "parse_mode": "Markdown"
+    }
+    
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        if response.status_code != 200:
+            # If the content is the same, Telegram returns 400 "message is not modified"
+            if "message is not modified" in response.text:
+                return True
+            logger.error("Telegram API Error (%s): %s", response.status_code, response.text)
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        logger.error("Failed to edit Telegram message: %s", e)
         return False
 
 def send_opportunity_alert(opp: dict) -> None:
@@ -72,3 +103,63 @@ def send_status_update(status: str) -> None:
     """
     msg = f"🤖 *Status Update:* {status}"
     send_message(msg)
+
+DASHBOARD_FILE = ".dashboard_msg_id"
+
+def _get_last_dashboard_id() -> Optional[int]:
+    if os.path.exists(DASHBOARD_FILE):
+        try:
+            with open(DASHBOARD_FILE, "r") as f:
+                return int(f.read().strip())
+        except:
+            pass
+    return None
+
+def _save_dashboard_id(msg_id: int):
+    with open(DASHBOARD_FILE, "w") as f:
+        f.write(str(msg_id))
+
+def update_scheduler_dashboard(runs: list) -> None:
+    """
+    Sends or updates a single dashboard message with the current schedule and countdowns.
+    """
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc)
+    
+    msg = "📅 *MONITORED GAMES DASHBOARD*\n"
+    msg += f"Last updated: {now.strftime('%H:%M:%S')} UTC\n\n"
+    
+    if not runs:
+        msg += "No games currently being monitored. 😴"
+    else:
+        for run in runs:
+            wakeup = run['wakeup_time']
+            diff = wakeup - now
+            
+            # Format countdown
+            if diff.total_seconds() <= 0:
+                t_minus = "ACTIVE 🔴"
+            else:
+                hours, remainder = divmod(int(diff.total_seconds()), 3600)
+                minutes, seconds = divmod(remainder, 60)
+                if hours > 0:
+                    t_minus = f"T-{hours}h {minutes}m"
+                else:
+                    t_minus = f"T-{minutes}m {seconds}s"
+            
+            msg += f"🏟 *{run['title']}*\n"
+            msg += f"⏰ Wakeup: {wakeup.strftime('%H:%M')} UTC | ⏳ *{t_minus}*\n\n"
+
+    last_id = _get_last_dashboard_id()
+    if last_id:
+        success = edit_message(msg, last_id)
+        if not success:
+            # If edit fails (e.g. message deleted), send a new one
+            new_id = send_message(msg)
+            if new_id:
+                _save_dashboard_id(new_id)
+    else:
+        new_id = send_message(msg)
+        if new_id:
+            _save_dashboard_id(new_id)

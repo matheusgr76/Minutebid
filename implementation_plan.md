@@ -52,6 +52,11 @@ All modules wired, imports verified, dependencies installed.
 - Implemented `rapidfuzz.token_set_ratio` to handle variations like "Arsenal FC" vs "Arsenal".
 - Added automated normalization for common soccer suffixes.
 
+### Phase 8 — Enhanced Scheduler Monitoring
+- Implement `send_schedule_summary` to notify user via Telegram of all monitored games for the next 24h.
+- Include countdowns (T-minus) for each match kickoff/wakeup window.
+- Update `scheduler.py` to trigger this report after each discovery cycle.
+
 ---
 
 ## Data Flow
@@ -115,6 +120,17 @@ graph TD
 ### [Component] Configuration
 #### [MODIFY] [config.py](file:///c:/Python/Projects/PLYM_Bots/Minutebid/config.py)
 - Add discovery thresholds and scheduling constants.
+
+## Phase 8 - Scheduler UI (Telegram)
+
+### [Component] Telegram Client
+#### [MODIFY] [telegram_client.py](file:///c:/Python/Projects/PLYM_Bots/Minutebid/telegram_client.py)
+- Add `send_schedule_summary(runs)` to format and send a list of monitored games.
+
+### [Component] Orchestration
+#### [MODIFY] [scheduler.py](file:///c:/Python/Projects/PLYM_Bots/Minutebid/scheduler.py)
+- Call `send_schedule_summary` after `get_upcoming_runs()`.
+- Ensure redundant updates are minimized (only send when schedule changes).
 
 ## Verification Plan
 

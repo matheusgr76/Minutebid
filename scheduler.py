@@ -3,6 +3,7 @@
 
 import logging
 import time
+import ctypes
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
@@ -17,6 +18,27 @@ logger = logging.getLogger("scheduler")
 WAKEUP_DELAY_MINUTES = 80
 # Duration of a scanning session (from Minute 65 to ~Minute 100 real-time)
 SESSION_DURATION_MINUTES = 35 
+
+# Windows Power Management Constants
+ES_CONTINUOUS = 0x80000000
+ES_SYSTEM_REQUIRED = 0x00000001
+
+def set_windows_sleep_inhibition(prevent: bool):
+    """
+    Tells Windows to prevent (or allow) system sleep. 
+    Does NOT prevent the display from turning off.
+    """
+    try:
+        if prevent:
+            # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+            ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED)
+            logger.info("Windows sleep inhibition enabled (System stays awake, screen can sleep).")
+        else:
+            # Restore default behavior
+            ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS)
+            logger.info("Windows sleep inhibition disabled (Standard power settings restored).")
+    except Exception as e:
+        logger.warning("Could not set Windows execution state: %s", e)
 
 def get_br_time(utc_dt: datetime) -> datetime:
     """Convert UTC datetime to Brasilia Time (UTC-3)."""
@@ -74,77 +96,84 @@ def run_scheduler_loop():
     logger.info("Starting Smart Scheduler Loop...")
     telegram_client.send_status_update("Smart Scheduler Started 🚀")
     
-    last_discovery_time = 0
-    last_dashboard_update = 0
-    discovery_interval = 3600  # 1 hour
-    dashboard_interval = 120   # 2 minutes — better responsiveness for live monitoring
-    runs = []
+    # Prevent system sleep while the bot is active
+    set_windows_sleep_inhibition(True)
 
-    def _check_dashboard(runs_list: list):
-        """Helper to update the Telegram dashboard if interval passed."""
-        nonlocal last_dashboard_update
-        now_ts = time.time()
-        if now_ts - last_dashboard_update > dashboard_interval:
-            try:
-                telegram_client.update_scheduler_dashboard(runs_list)
-            except Exception as e:
-                logger.error("Dashboard update failed: %s", e)
-            last_dashboard_update = now_ts
+    try:
+        last_discovery_time = 0
+        last_dashboard_update = 0
+        discovery_interval = 3600  # 1 hour
+        dashboard_interval = 120   # 2 minutes — better responsiveness for live monitoring
+        runs = []
 
-    while True:
-        now_ts = time.time()
-
-        # 1. Periodically fetch soccer schedule (Discovery)
-        if now_ts - last_discovery_time > discovery_interval:
-            runs = get_upcoming_runs()
-            last_discovery_time = now_ts
-            logger.info("Discovery cycle complete. %d matches found.", len(runs))
-            if runs:
-                next_m = runs[0]
-                br_kickoff = get_br_time(next_m['kickoff'])
-                br_wakeup = get_br_time(next_m['wakeup_time'])
-                logger.info("Next Match: %s | Kickoff: %s (BR) | Wakeup: %s (BR)", 
-                            next_m['title'], br_kickoff.strftime('%H:%M'), br_wakeup.strftime('%H:%M'))
-
-        # 2. Update Telegram dashboard periodically
-        _check_dashboard(runs)
-        
-        if not runs:
-            logger.info("No more matches scheduled. Sleeping before re-discovery.")
-            time.sleep(60)
-            continue
-
-        now = datetime.now(timezone.utc)
-        active_run = None
-        for run in runs:
-            if run["wakeup_time"] <= now <= run["end_time"]:
-                active_run = run
-                break
-        
-        if active_run:
-            logger.info("!!! WAKING UP for match: %s", active_run["title"])
-            telegram_client.send_status_update(f"Waking up for: {active_run['title']} 🏟")
-            
-            # Start frequent scanning session
-            session_end = active_run["end_time"]
-            while datetime.now(timezone.utc) < session_end:
+        def _check_dashboard(runs_list: list):
+            """Helper to update the Telegram dashboard if interval passed."""
+            nonlocal last_dashboard_update
+            now_ts = time.time()
+            if now_ts - last_dashboard_update > dashboard_interval:
                 try:
-                    main.run_single_scan()
+                    telegram_client.update_scheduler_dashboard(runs_list)
                 except Exception as e:
-                    logger.error("Error during scan session: %s", e)
-                
-                # Check for dashboard update even during active session
-                _check_dashboard(runs)
-                
-                # Scan on a slow pulse (e.g. 120s) during active window
-                time.sleep(SCAN_INTERVAL_SLOW)
-                
-            logger.info("Session finished for %s. Re-running discovery.", active_run["title"])
-            last_discovery_time = 0 # Force discovery after a session
-            continue
+                    logger.error("Dashboard update failed: %s", e)
+                last_dashboard_update = now_ts
 
-        # 3. If no match is active, sleep (60s check for dashboard/active runs)
-        time.sleep(60)
+        while True:
+            now_ts = time.time()
+
+            # 1. Periodically fetch soccer schedule (Discovery)
+            if now_ts - last_discovery_time > discovery_interval:
+                runs = get_upcoming_runs()
+                last_discovery_time = now_ts
+                logger.info("Discovery cycle complete. %d matches found.", len(runs))
+                if runs:
+                    next_m = runs[0]
+                    br_kickoff = get_br_time(next_m['kickoff'])
+                    br_wakeup = get_br_time(next_m['wakeup_time'])
+                    logger.info("Next Match: %s | Kickoff: %s (BR) | Wakeup: %s (BR)", 
+                                next_m['title'], br_kickoff.strftime('%H:%M'), br_wakeup.strftime('%H:%M'))
+
+            # 2. Update Telegram dashboard periodically
+            _check_dashboard(runs)
+            
+            if not runs:
+                logger.info("No more matches scheduled. Sleeping before re-discovery.")
+                time.sleep(60)
+                continue
+
+            now = datetime.now(timezone.utc)
+            active_run = None
+            for run in runs:
+                if run["wakeup_time"] <= now <= run["end_time"]:
+                    active_run = run
+                    break
+            
+            if active_run:
+                logger.info("!!! WAKING UP for match: %s", active_run["title"])
+                telegram_client.send_status_update(f"Waking up for: {active_run['title']} 🏟")
+                
+                # Start frequent scanning session
+                session_end = active_run["end_time"]
+                while datetime.now(timezone.utc) < session_end:
+                    try:
+                        main.run_single_scan()
+                    except Exception as e:
+                        logger.error("Error during scan session: %s", e)
+                    
+                    # Check for dashboard update even during active session
+                    _check_dashboard(runs)
+                    
+                    # Scan on a slow pulse (e.g. 120s) during active window
+                    time.sleep(SCAN_INTERVAL_SLOW)
+                    
+                logger.info("Session finished for %s. Re-running discovery.", active_run["title"])
+                last_discovery_time = 0 # Force discovery after a session
+                continue
+
+            # 3. If no match is active, sleep (60s check for dashboard/active runs)
+            time.sleep(60)
+    finally:
+        # Restore normal sleep settings on exit
+        set_windows_sleep_inhibition(False)
 
 
 if __name__ == "__main__":

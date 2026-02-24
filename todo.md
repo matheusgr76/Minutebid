@@ -97,3 +97,12 @@
 - [x] Inject the helper function into the active monitoring loop. ✅
 - [x] Reduce `dashboard_interval` to 120s for better responsiveness. ✅
 - [x] Verify that the dashboard updates while a match is "ACTIVE". ✅
+
+---
+
+## Session 11 — Always On (Local Windows Persistence)
+- [x] THINK: Research cloud vs local options and risks ✅
+- [x] EXECUTE: Create `Dockerfile` and `setup_vps.sh` (Archived for future) ✅
+- [x] DECISION: Option 2 - Local Windows Persistence ✅
+- [ ] EXECUTE: Implement `SetThreadExecutionState` in `scheduler.py`
+- [ ] VERIFY: Run bot and check if PC stays awake while monitor is off

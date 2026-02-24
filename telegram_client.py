@@ -12,8 +12,8 @@ def send_message(text: str) -> bool:
     Sends a generic text message to the configured Telegram chat.
     Returns True if successful, False otherwise.
     """
-    token = os.getenv("TELEGRAM_TOKEN")
-    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    token = os.getenv("TELEGRAM_TOKEN", "").strip()
+    chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
     
     if not token or not chat_id:
         logger.warning("Telegram credentials missing in .env. Skipping notification.")
@@ -28,6 +28,8 @@ def send_message(text: str) -> bool:
     
     try:
         response = requests.post(url, json=payload, timeout=10)
+        if response.status_code != 200:
+            logger.error("Telegram API Error (%s): %s", response.status_code, response.text)
         response.raise_for_status()
         return True
     except Exception as e:

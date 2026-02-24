@@ -27,8 +27,17 @@ Minutebid is a live soccer probability scanner that identifies mispriced winner 
 - **Gamma API Pivot**: Removed dependencies on the unstable CLOB API. Prices are now fetched directly from Gamma, resolving persistent "Bad Request" errors.
 - **Fuzzy Matching**: Uses `difflib` to match "Everton" (Polymarket) with "Everton FC" (Odds API) automatically.
 - **Robustness**: All API calls include exponential backoff retry logic.
-- **Logging**: All activity is logged to `minutebid_scan.log` for overnight monitoring.
+- **Logging**: All activity is logged to `minutebid_scan.log` for traceability.
 - **Testing**: Unit tests in `tests/test_scanner.py` verify filtering logic.
+
+---
+
+## Upcoming: Phase 5 - Smart Daily Scheduler (Quota Aware)
+To protect the Odds API quota, the bot is moving to a "Smart Discovery" model:
+1. **Manual Discovery**: User runs the bot once a day.
+2. **Schedule Mapping**: Bot identifies soccer matches starting in the next 24h.
+3. **Smart Sleep**: Bot sleeps until the **"95-minute anchor"** (StartTime + 95m), which targets the Minute 75-90+ window after accounting for half-time and stoppage.
+4. **Active Scanning**: WebSocket is used to track the *actual* game clock; Odds API is ONLY called during the target window.
 
 ---
 

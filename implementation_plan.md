@@ -70,3 +70,52 @@ All modules wired, imports verified, dependencies installed.
 - No polling loop — one scan per manual run
 - Credentials: `ODDS_API_KEY` in `.env`, never in code
 - All network calls: 10s timeout, fail gracefully with log
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ADDITIONAL FEATURES
+
+## Phase 5 - Smart Daily Scheduler (Quota Aware)
+
+### [Component] Orchestration (Scheduling)
+#### [NEW] [scheduler.py](file:///c:/Python/Projects/PLYM_Bots/Minutebid/scheduler.py)
+- **Discovery Mode**: On manual daily start, fetch all soccer matches starting T+24h.
+- **Wakeup Logic**: Calculate `start_time + 75 minutes` and sleep until that window opens.
+- **Active Scanning**: Once in the window, use WebSocket to track live minute. Trigger scan only during `75-90+`.
+
+#### [MODIFY] [main.py](file:///c:/Python/Projects/PLYM_Bots/Minutebid/main.py)
+- Refactor scanning logic to be callable as `run_scan(event_ids)` for specific targeted events.
+
+### [Component] Configuration
+#### [MODIFY] [config.py](file:///c:/Python/Projects/PLYM_Bots/Minutebid/config.py)
+- Add discovery thresholds and scheduling constants.
+
+## Verification Plan
+
+### Manual Verification
+- Run discovery and confirm the list of "Today's Games" is accurate.
+- Verify the bot sleeps/wakes correctly during a simulated match window.
+- Monitor Odds API call logs to ensure zero waste.

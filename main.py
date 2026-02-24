@@ -29,27 +29,32 @@ logging.basicConfig(
 logger = logging.getLogger("main")
 
 
-def run() -> None:
-    load_dotenv()  # Load .env for Odds API credentials
-    logger.info("=== Minutebid scan started ===")
-
+def run_single_scan() -> None:
+    """Performs one full scan across all active soccer events."""
+    logger.info("--- Starting single scan iteration ---")
+    
     # 1. Fetch active soccer events and their market prices from Gamma
     events, prices = polymarket_client.get_active_soccer_events()
     if not events:
-        print("\n  No active soccer events found on Polymarket right now.\n")
+        logger.info("No active soccer events found on Polymarket right now.")
         return
 
     # 4. Fetch live game states via Sports WebSocket
     game_states = sports_ws.get_live_game_states()
 
-    # 5. Fetch Odds API reference prices (graceful if credentials missing)
+    # 5. Fetch Odds API reference prices
     reference_prices = odds_api_client.get_live_soccer_reference_prices()
 
     # 6. Filter and display
     opportunities = scanner.filter_opportunities(events, prices, game_states, reference_prices)
     display.print_results(opportunities)
 
-    logger.info("=== Scan complete ===")
+
+def run() -> None:
+    load_dotenv()  # Load .env for Odds API credentials
+    logger.info("=== Minutebid orchestrator started ===")
+    run_single_scan()
+    logger.info("=== Orchestrator complete ===")
 
 
 if __name__ == "__main__":

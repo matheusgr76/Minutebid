@@ -92,6 +92,51 @@ def get_active_soccer_events() -> tuple[list[dict], dict[str, float]]:
     return all_events, market_prices
 
 
+def get_soccer_schedule() -> list[dict]:
+    """
+    Fetch upcoming soccer matches from specific leagues.
+    Returns a list of match event dicts with at least 'id', 'title', and 'startTime'.
+    Filters for events that look like individual matches (containing " vs " or " v ").
+    """
+    matches = []
+    seen_ids = set()
+
+    def find_matches(data):
+        if not isinstance(data, list):
+            return
+        for event in data:
+            event_id = str(event.get("id"))
+            title = event.get("title", "")
+            st = event.get("startTime")
+            # Broaden filter: look for vs, vs., or v.
+            title_lower = title.lower()
+            is_match = False
+            for term in [" vs ", " vs. ", " v ", " v. "]:
+                if term in title_lower:
+                    is_match = True
+                    break
+            
+            if is_match:
+                if event_id not in seen_ids:
+                    if st:
+                        matches.append(event)
+                        seen_ids.add(event_id)
+
+    # Fetch from configured leagues
+    for league, series_id in LEAGUE_SERIES_IDS.items():
+        params = {"series_id": series_id, "closed": "false", "limit": 50}
+        data = _get(f"{GAMMA_API_BASE}/events", params=params)
+        find_matches(data)
+
+    for league, tag_slug in LEAGUE_TAG_SLUGS.items():
+        params = {"tag_slug": tag_slug, "closed": "false", "limit": 50}
+        data = _get(f"{GAMMA_API_BASE}/events", params=params)
+        find_matches(data)
+
+    logger.info("Discovered %d upcoming soccer matches for scheduling.", len(matches))
+    return matches
+
+
 def get_market_prices(condition_ids: list[str]) -> dict[str, float]:
     """
     [DEPRECATED] Fetch best-ask prices from CLOB.

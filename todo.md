@@ -36,3 +36,13 @@
     - [x] Refactor `polymarket_client.py` to extraction prices from Gamma response
     - [x] Update `main.py` to remove redundant CLOB calls
 - [x] Implement robust retry logic for Odds API and Gamma API calls
+
+---
+
+## Session 4 — Smart Bot Scheduling (Phase 5)
+- [x] Create feature branch `feature/scheduling`
+- [x] EXECUTE: `polymarket_client.get_soccer_schedule()`
+- [x] EXECUTE: Refactor `main.py` into targeted `run_scan(event_ids)` function
+- [x] EXECUTE: Create `scheduler.py` (Daily Discovery mode + 95m Wakeup Sleep loop)
+- [x] VERIFY: Run discovery manually and check "95m Wakeup" logic
+- [x] VERIFY: E2E test during a live window to confirm zero quota waste ✅

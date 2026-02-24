@@ -92,14 +92,29 @@ def get_active_soccer_events() -> tuple[list[dict], dict[str, float]]:
     return all_events, market_prices
 
 
+_SCHEDULE_SUFFIXES = (" - more markets", " - winner", " - draw no bet")
+
+
+def _base_match_title(title: str) -> str:
+    """Strip Polymarket sub-market suffixes to get the canonical match title."""
+    lower = title.lower()
+    for suffix in _SCHEDULE_SUFFIXES:
+        if lower.endswith(suffix):
+            return title[:len(title) - len(suffix)].strip()
+    return title.strip()
+
+
 def get_soccer_schedule() -> list[dict]:
     """
     Fetch upcoming soccer matches from specific leagues.
     Returns a list of match event dicts with at least 'id', 'title', and 'startTime'.
     Filters for events that look like individual matches (containing " vs " or " v ").
+    Deduplicates by normalized title to exclude Polymarket sub-market variants
+    (e.g. "Match X - More Markets" is dropped when "Match X" is already present).
     """
     matches = []
     seen_ids = set()
+    seen_titles = set()
 
     def find_matches(data):
         if not isinstance(data, list):
@@ -108,19 +123,20 @@ def get_soccer_schedule() -> list[dict]:
             event_id = str(event.get("id"))
             title = event.get("title", "")
             st = event.get("startTime")
-            # Broaden filter: look for vs, vs., or v.
             title_lower = title.lower()
             is_match = False
             for term in [" vs ", " vs. ", " v ", " v. "]:
                 if term in title_lower:
                     is_match = True
                     break
-            
+
             if is_match:
-                if event_id not in seen_ids:
+                base = _base_match_title(title)
+                if event_id not in seen_ids and base not in seen_titles:
                     if st:
                         matches.append(event)
                         seen_ids.add(event_id)
+                        seen_titles.add(base)
 
     # Fetch from configured leagues
     for league, series_id in LEAGUE_SERIES_IDS.items():

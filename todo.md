@@ -53,3 +53,11 @@
 - [x] EXECUTE: Connect `main.py` iteration results to Telegram alerts
 - [x] EXECUTE: Add status heartbeats to `scheduler.py`
 - [x] VERIFY: Manual mock-alert to user Telegram handle (verified code paths)
+
+---
+
+## Session 6 — Scanner Hardening (Phase 7)
+- [x] EXECUTE: Install `rapidfuzz` for string metric matching
+- [x] EXECUTE: Implement name normalization (lowercase, trim suffixes like "FC" or "United")
+- [x] EXECUTE: Update `scanner.py` to use fuzzy thresholds (Token Set Ratio) when exact match fails
+- [x] VERIFY: Run tests with a list of known variations (e.g., "Arsenal FC" vs "Arsenal") ✅

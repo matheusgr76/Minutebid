@@ -12,12 +12,13 @@ A manually-triggered Python script that scans Polymarket for live soccer markets
 | `config.py` | All constants, thresholds, API base URLs | ✅ Done — needs Odds API constants |
 | `polymarket_client.py` | Gamma API + CLOB API HTTP calls | ✅ Done |
 | `sports_ws.py` | Polymarket Sports WebSocket → live game minute/score | ✅ Done |
-| `odds_api_client.py` | The Odds API → reference prices from major bookmakers | 🔄 Replacing `betfair_client.py` |
-| `scanner.py` | Pure filter: 75-90 min + >80% prob + edge calc | ✅ Done — needs Odds API format update |
+| `odds_api_client.py` | The Odds API → reference prices from major bookmakers | ✅ Done |
+| `scanner.py` | Pure filter: 75-90 min + >80% prob + edge calc | ✅ Done |
 | `display.py` | Terminal table output | ✅ Done |
 | `main.py` | Entry point — orchestrates one scan | ✅ Done |
-| `requirements.txt` | Dependencies | ✅ Done — needs `betfair_client` removed |
-| `.env.example` | Credential template | ✅ Done — needs Odds API key |
+| `requirements.txt` | Dependencies | ✅ Done |
+| `.env.example` | Credential template | ✅ Done |
+| `telegram_client.py` | Telegram alerts and heartbeats | ✅ Done |
 
 ---
 
@@ -26,15 +27,13 @@ A manually-triggered Python script that scans Polymarket for live soccer markets
 ### Phase 1 — Core Scaffold ✅
 All modules wired, imports verified, dependencies installed.
 
-### Phase 2 — Reference Price Source 🔄 (current)
+### Phase 2 — Reference Price Source ✅
 - Delete `betfair_client.py`
 - Write `odds_api_client.py` using [The Odds API](https://the-odds-api.com)
-  - Endpoint: `GET /v4/sports/soccer/odds` with `inPlay=true`
-  - Returns: best back prices from multiple bookmakers (Pinnacle, bet365, etc.)
-  - Requires: free API key (500 req/month free tier)
-- Update `config.py` with Odds API base URL and key env var name
-- Update `scanner.py` for Odds API price format (bookmaker → outcome → price)
+- Update `config.py` with Odds API settings
+- Update `scanner.py` for Odds API price format
 - Update `.env.example` with `ODDS_API_KEY`
+- Update `requirements.txt`
 - Update `requirements.txt` (remove betfair-specific notes)
 
 ### Phase 5 — Smart Bot Scheduling ✅
@@ -42,12 +41,16 @@ All modules wired, imports verified, dependencies installed.
 - Created `scheduler.py` with 95-minute wakeup logic.
 - Refactored `main.py` for session-based scanning.
 
-### Phase 6 — Telegram Notifications (Proposed)
-- **Goal**: Send real-time alerts for discovered opportunities and bot heartbeats.
-- [NEW] `telegram_client.py`: Implementation using `requests` to call Telegram Bot API.
-- [MODIFY] `main.py`: Call `telegram_client` when opportunities are discovered.
-- [MODIFY] `scheduler.py`: Send "Bot Started" and "Sleeping" status updates.
-- [MODIFY] `.env`: Add `TELEGRAM_TOKEN` and `TELEGRAM_CHAT_ID`.
+### Phase 6 — Telegram Notifications ✅
+- Send real-time alerts for discovered opportunities and bot heartbeats.
+- Created `telegram_client.py` using Telegram Bot API.
+- Integrated alerts into `main.py` and `scheduler.py`.
+- Added credential templates to `.env.example`.
+
+### Phase 7 — Fuzzy Team Name Matching ✅
+- Improved matching reliability between Polymarket (Gamma) and Odds API.
+- Implemented `rapidfuzz.token_set_ratio` to handle variations like "Arsenal FC" vs "Arsenal".
+- Added automated normalization for common soccer suffixes.
 
 ---
 

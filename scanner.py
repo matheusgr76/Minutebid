@@ -2,7 +2,7 @@
 # Takes raw data from all clients and returns actionable opportunities.
 
 import logging
-import difflib
+from rapidfuzz import fuzz
 from config import MIN_MINUTE, MAX_MINUTE, WIN_PROB_THRESHOLD, MIN_EDGE_THRESHOLD
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,6 @@ def filter_opportunities(
       3. At least one outcome has Polymarket implied prob > WIN_PROB_THRESHOLD
 
     Edge (Reference prob - Polymarket prob) is computed when Reference data is available.
-    Opportunities with positive edge are flagged; all qualifying matches are shown.
     """
     opportunities = []
 
@@ -43,7 +42,11 @@ def filter_opportunities(
             continue
 
         ref_prob = _lookup_reference_prob(event, best["outcome"], reference_prices)
-        edge = round(ref_prob - best["probability"], 4) if ref_prob is not None else None
+        
+        # Calculate edge if reference data exists
+        edge = None
+        if ref_prob is not None:
+            edge = round(ref_prob - best["probability"], 4)
 
         opportunities.append({
             "match": event.get("title", "Unknown Match"),
@@ -94,57 +97,59 @@ def _lookup_reference_prob(
     reference_prices: dict[str, dict],
 ) -> float | None:
     """
-    Try to match this event to a Reference market using fuzzy matching,
-    then return the probability for the matching outcome.
+    Try to match this event to a Reference market using fuzzy matching.
     """
-    event_title = event.get("title", "").lower()
+    event_title = _normalize(event.get("title", ""))
     
-    # 1. Find the best matching event
+    # 1. Find the best matching event in Reference Prices
     best_event_match = None
     best_event_score = 0.0
     
     for ref_event_name in reference_prices.keys():
-        score = _calculate_similarity(event_title, ref_event_name.lower())
+        score = fuzz.token_set_ratio(event_title, _normalize(ref_event_name))
         if score > best_event_score:
             best_event_score = score
             best_event_match = ref_event_name
 
-    # Threshold for event matching: 0.6 is usually safe for team names
-    if not best_event_match or best_event_score < 0.6:
+    # Threshold for event matching: 80% with token_set_ratio is very safe
+    if not best_event_match or best_event_score < 80:
+        logger.debug("No reference event match for '%s' (Best score: %s)", event_title, best_event_score)
         return None
 
     # 2. Find the best matching outcome within that event
     outcomes = reference_prices[best_event_match]
-    outcome_lower = outcome_name.lower()
     
-    # Simple check first: Does the team name appear in the question?
-    # e.g. "Will Liverpool win?" matches "Liverpool"
+    # Special Handling for Draws
+    if "draw" in outcome_name.lower():
+        return outcomes.get("Draw") or outcomes.get("draw")
+
+    # Fuzzy match for team names in the question
+    # e.g. "Will Liverpool win?" matched against Reference "Liverpool"
     best_outcome_match = None
     best_outcome_score = 0.0
+    
+    norm_outcome = _normalize(outcome_name)
 
     for ref_outcome_name, prob in outcomes.items():
-        ref_lower = ref_outcome_name.lower()
-        # Direct containment is common
-        if ref_lower in outcome_lower or outcome_lower in ref_lower:
-            return prob
-            
-        # Fuzzy fallback for outcomes
-        score = _calculate_similarity(outcome_lower, ref_lower)
+        score = fuzz.token_set_ratio(norm_outcome, _normalize(ref_outcome_name))
         if score > best_outcome_score:
             best_outcome_score = score
             best_outcome_match = prob
             
-    if best_outcome_score > 0.5:
+    if best_outcome_score > 70:
         return best_outcome_match
 
     return None
 
 
-def _calculate_similarity(a: str, b: str) -> float:
-    """Return a similarity score between 0.0 and 1.0."""
-    # Remove common junk words
-    stop_words = {"vs", "v", "fc", "the", "a", "an", "and", "&"}
-    a_clean = " ".join([w for w in a.split() if w not in stop_words])
-    b_clean = " ".join([w for w in b.split() if w not in stop_words])
+def _normalize(text: str) -> str:
+    """Lowers, strips, and removes common soccer fluff."""
+    if not text:
+        return ""
+    text = text.lower()
+    # Remove common suffixes/prefixes
+    removals = ["fc", "cf", "sc", "united", "city", "real", "atletico", "saint", "st.", "st ", "vs", " v ", "."]
+    for r in removals:
+        text = text.replace(r, " ")
     
-    return difflib.SequenceMatcher(None, a_clean, b_clean).ratio()
+    return " ".join(text.split())

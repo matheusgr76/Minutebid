@@ -3,9 +3,11 @@
 
 import logging
 import platform
+import threading
 import time
 import ctypes
 from datetime import datetime, timedelta, timezone
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from dotenv import load_dotenv
 
 import polymarket_client
@@ -42,6 +44,25 @@ def set_windows_sleep_inhibition(prevent: bool):
             logger.info("Windows sleep inhibition disabled (Standard power settings restored).")
     except Exception as e:
         logger.warning("Could not set Windows execution state: %s", e)
+
+class _HealthHandler(BaseHTTPRequestHandler):
+    """Minimal HTTP handler — satisfies Koyeb's TCP/HTTP health check on port 8000."""
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    def log_message(self, *args):
+        pass  # Silence per-request access logs
+
+
+def _start_health_server(port: int = 8000):
+    """Start health check server in a daemon thread. Dies when main process exits."""
+    server = HTTPServer(("0.0.0.0", port), _HealthHandler)
+    t = threading.Thread(target=server.serve_forever, daemon=True)
+    t.start()
+    logger.info("Health check server listening on port %d", port)
+
 
 def get_br_time(utc_dt: datetime) -> datetime:
     """Convert UTC datetime to Brasilia Time (UTC-3)."""
@@ -96,6 +117,7 @@ def get_upcoming_runs() -> list[dict]:
 def run_scheduler_loop():
     """Main loop that sleeps and wakes up for match windows."""
     load_dotenv()
+    _start_health_server()
     logger.info("Starting Smart Scheduler Loop...")
     telegram_client.send_status_update("Smart Scheduler Started 🚀")
     

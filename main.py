@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 import polymarket_client
 import sports_ws
-import odds_api_client
 import scanner
 import display
 import telegram_client
@@ -49,11 +48,8 @@ def run_single_scan() -> None:
     # 4. Fetch live game states via Sports WebSocket
     game_states = sports_ws.get_live_game_states()
 
-    # 5. Fetch Odds API reference prices
-    reference_prices = odds_api_client.get_live_soccer_reference_prices()
-
-    # 6. Filter and display
-    opportunities = scanner.filter_opportunities(events, prices, game_states, reference_prices)
+    # 5. Filter: find outcomes >= 80% on Polymarket in the 75-90+ min window
+    opportunities = scanner.filter_opportunities(events, prices, game_states)
     display.print_results(opportunities)
     
     # 7. Notify via Telegram

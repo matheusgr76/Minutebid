@@ -123,12 +123,24 @@
 - [x] EXECUTE: Create `Dockerfile` (python:3.12-slim, PYTHONUNBUFFERED=1) ✅
 - [x] EXECUTE: Create `.dockerignore` ✅
 - [x] EXECUTE: Update `todo.md` and `implementation_plan.md` ✅
-- [ ] EXECUTE: Merge `hotfix/telegram-dashboard-refactor` → `main` and push to GitHub
-- [ ] VERIFY: Create Koyeb Worker service, set env vars, deploy, confirm "Smart Scheduler Started 🚀" via Telegram
+- [x] EXECUTE: Merge `hotfix/telegram-dashboard-refactor` → `main` and push to GitHub ✅
+- [x] VERIFY: Create Koyeb Worker service, set env vars, deploy, confirm "Smart Scheduler Started 🚀" via Telegram ✅
 
 ---
 
-## Session 15 — Automatic Betting System (Phase 15)
+## Session 15 — Scanner Pivot: Polymarket-Only (Hotfix)
+- [x] THINK: Root cause — `ODDS_API_SPORT = "soccer"` is invalid key + free tier has no live odds → scanner never fired ✅
+- [x] THINK: Decision — drop Odds API entirely, alert on Polymarket price >= 80% during 75-90+ min ✅
+- [ ] EXECUTE: Simplify `scanner.py` to Polymarket-only (remove `reference_prices` param)
+- [ ] EXECUTE: Remove Odds API call from `main.py`
+- [ ] EXECUTE: Update `telegram_client.py` alert format
+- [ ] EXECUTE: Remove dead constants from `config.py`
+- [ ] EXECUTE: Delete `odds_api_client.py`
+- [ ] VERIFY: Confirm bet signal fires correctly during next live match
+
+---
+
+## Session 16 — Automatic Betting System (Phase 15)
 - [ ] THINK: Define risk management and staking logic
 - [ ] THINK: Evaluate Polymarket CLOB API vs Proxy for automated execution
 - [ ] EXECUTE: Implement order placement logic (Smart Betting)

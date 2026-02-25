@@ -12,8 +12,7 @@ A manually-triggered Python script that scans soccer markets. It uses a **"Slow 
 | `config.py` | All constants, thresholds, API base URLs | ✅ Done |
 | `polymarket_client.py` | Gamma API + CLOB API HTTP calls | ✅ Done |
 | `sports_ws.py` | Polymarket Sports WebSocket → live game minute/score | ✅ Done |
-| `odds_api_client.py` | The Odds API → reference prices from major bookmakers | ✅ Done |
-| `scanner.py` | Pure filter: 75-90 min + >80% prob + edge calc | ✅ Done |
+| `scanner.py` | Pure filter: 75-90 min + Polymarket price >= 80% | ✅ Done |
 | `display.py` | Terminal table output | ✅ Done |
 | `main.py` | Entry point — orchestrates one scan | ✅ Done |
 | `scheduler.py` | Long-running loop: discovery, wakeup, active scan sessions | ✅ Done |
@@ -60,9 +59,15 @@ All modules wired, imports verified, dependencies installed.
 - Dashboard update throttled to every 300s (5 min).
 
 ### Phase 9 — Slow Pulse Monitoring (Strategic Pivot) ✅
-- Reduced scan frequency to **120 seconds** (2 minutes) to conserve API quota.
-- Pivoted from "Edge Hunting" to **"Consensus Following"**: trigger alerts when bookmaker odds for a favorite drop below a resolution threshold (e.g., 1.05).
-- Simplified scanner logic: verify bookmaker consensus late in the game (Minute 80+) and notify for manual execution on Polymarket.
+- Reduced scan frequency to **120 seconds** (2 minutes).
+- Pivoted from "Edge Hunting" to "Consensus Following" using bookmaker odds threshold.
+
+### Phase 13 — Scanner Pivot: Polymarket-Only ✅
+- Root cause: `ODDS_API_SPORT = "soccer"` is not a valid The Odds API key; free tier also has no live odds → scanner never fired a single bet alert.
+- Dropped The Odds API entirely. `odds_api_client.py` deleted.
+- Scanner now alerts on Polymarket price alone: any outcome >= `WIN_PROB_THRESHOLD` (80%) in the 75–90+ min window triggers a bet signal.
+- Removed dead constants from `config.py` (`ODDS_API_*`, `RESOLVED_ODDS_THRESHOLD`, `MIN_EDGE_THRESHOLD`).
+- `ODDS_API_KEY` credential no longer required.
 
 ### Phase 14 — Cloud Deployment (Koyeb) ✅
 - Moved from local Windows machine to Koyeb free tier (always-on Linux container).

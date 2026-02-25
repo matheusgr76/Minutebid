@@ -69,30 +69,16 @@ def edit_message(text: str, message_id: int) -> bool:
 
 def send_opportunity_alert(opp: dict) -> None:
     """
-    Formats and sends a high-priority opportunity alert based on bookie resolution.
+    Formats and sends a bet signal alert based on Polymarket price threshold.
     """
-    # Header
-    msg = f"⚽ *STATISTICALLY RESOLVED MATCH!*\n\n"
-    
-    # Match Info
+    poly_prob = opp.get('poly_prob', 0) * 100
+    msg = f"⚽ *BET SIGNAL*\n\n"
     msg += f"🏟 *Match:* {opp.get('match', 'Unknown')}\n"
     msg += f"⏱ *Minute:* {opp.get('minute', '?')}\n"
     msg += f"📊 *Score:* {opp.get('score', '?')}\n\n"
-    
-    # Resolution Info
-    msg += f"🔥 *Resolved Outcome:* {opp.get('resolved_outcome', 'Yes')}\n"
-    
-    ref_prob = opp.get('reference_prob', 0) * 100
-    poly_prob = (opp.get('poly_prob') * 100) if opp.get('poly_prob') is not None else 0
-    
-    msg += f"📈 *Bookie Consensus:* {ref_prob:.1f}%\n"
-    if opp.get('poly_prob') is not None:
-        msg += f"📍 *Polymarket Price:* {poly_prob:.1f}% (${opp.get('poly_prob', 0):.2f})\n"
-    else:
-        msg += f"📍 *Polymarket Price:* Not found\n"
-    
+    msg += f"🔥 *Outcome:* {opp.get('outcome', '?')}\n"
+    msg += f"📍 *Polymarket:* {poly_prob:.1f}¢\n"
     msg += f"\n[View on Polymarket]({opp.get('market_url', 'https://polymarket.com')})"
-        
     send_message(msg)
 
 def send_status_update(status: str) -> None:

@@ -27,10 +27,9 @@ LEAGUE_TAG_SLUGS = {
 # ---------------------------------------------------------------------------
 MIN_MINUTE = 75        # Only consider matches at or after this minute
 MAX_MINUTE = 120       # Covers 90 + extra time
-WIN_PROB_THRESHOLD = 0.80  # Minimum implied probability to surface a market
+WIN_PROB_THRESHOLD = 0.80  # Minimum Polymarket implied probability to surface a market
 MAX_SCHEDULE_HOURS = 48    # Only monitor matches starting within this window
 SCAN_INTERVAL_SLOW = 120   # 2-minute "Slow Pulse" interval during active monitoring
-RESOLVED_ODDS_THRESHOLD = 1.25 # Trigger alert if bookie odds drop below this (Consensus)
 
 # ---------------------------------------------------------------------------
 # Network settings
@@ -39,16 +38,3 @@ REQUEST_TIMEOUT_SECONDS = 10   # HTTP request timeout
 WS_READ_TIMEOUT_SECONDS = 8    # Max time to wait for WebSocket messages
 WS_MAX_MESSAGES = 50           # Max messages to read in one WebSocket session
 
-# ---------------------------------------------------------------------------
-# The Odds API (reference price / edge detection)
-# Credentials loaded from .env — never hardcoded here
-# ---------------------------------------------------------------------------
-ODDS_API_BASE = "https://api.the-odds-api.com/v4"
-ODDS_API_SPORT = "soccer"          # The Odds API sport key for all soccer
-ODDS_API_REGIONS = "eu"
-ODDS_API_MARKETS = "h2h"
-ODDS_API_ODDS_FORMAT = "decimal"
-
-# Minimum edge (Reference prob - Polymarket prob) to flag as mispriced
-# e.g. 0.05 means Reference must price at least 5pp higher than Polymarket
-MIN_EDGE_THRESHOLD = 0.05

@@ -102,17 +102,31 @@ def run_scheduler_loop():
     try:
         last_discovery_time = 0
         last_dashboard_update = 0
+        last_dashboard_repost = 0
         discovery_interval = 3600  # 1 hour
-        dashboard_interval = 120   # 2 minutes — better responsiveness for live monitoring
+        dashboard_interval = 600   # 10 minutes — Reduce noise as requested
+        repost_interval = 7200     # 2 hours — Post a fresh message to avoid scrolling
         runs = []
 
         def _check_dashboard(runs_list: list):
             """Helper to update the Telegram dashboard if interval passed."""
-            nonlocal last_dashboard_update
+            nonlocal last_dashboard_update, last_dashboard_repost
             now_ts = time.time()
+            
+            # Check for 2-hour RE-POST (Fresh Message)
+            if now_ts - last_dashboard_repost > repost_interval:
+                try:
+                    telegram_client.update_scheduler_dashboard(runs_list, force_new=True)
+                    last_dashboard_repost = now_ts
+                    last_dashboard_update = now_ts # Also resets update timer
+                    return
+                except Exception as e:
+                    logger.error("Dashboard re-post failed: %s", e)
+
+            # Check for regular EDIT (Update same message)
             if now_ts - last_dashboard_update > dashboard_interval:
                 try:
-                    telegram_client.update_scheduler_dashboard(runs_list)
+                    telegram_client.update_scheduler_dashboard(runs_list, force_new=False)
                 except Exception as e:
                     logger.error("Dashboard update failed: %s", e)
                 last_dashboard_update = now_ts
@@ -177,6 +191,6 @@ def run_scheduler_loop():
 
 
 if __name__ == "__main__":
-    # Setup logging for standalone execution
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    # Setup unified logging (console + file)
+    main.setup_logging()
     run_scheduler_loop()

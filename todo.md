@@ -105,3 +105,25 @@
 - [x] EXECUTE: Implement Windows sleep prevention ✅
 - [x] VERIFY: Confirm 24/7 persistence via Telegram ✅
 - [x] CLEANUP: Remove unused cloud config files (Dockerfile, scripts) ✅
+
+---
+
+## Session 13 — Telegram Dashboard Refactor (Hotfix)
+- [x] THINK: Plan re-post logic and 10min frequency ✅
+- [x] EXECUTE: Modify `scheduler.py` intervals and re-post trigger ✅
+- [x] EXECUTE: Update `telegram_client.py` message handling ✅
+- [ ] VERIFY: Monitor dashboard creation and edit cycle
+
+---
+
+## Session 14 — Cloud Deployment (Phase 14)
+- [ ] THINK: Select cloud provider (GCP/AWS/Azure) vs Dedicated VPS
+- [ ] THINK: Plan environment migration (Secrets, UTC-3 sync, inhibition)
+- [ ] EXECUTE: Setup cloud instance and deploy code
+
+---
+
+## Session 15 — Automatic Betting System (Phase 15)
+- [ ] THINK: Define risk management and staking logic
+- [ ] THINK: Evaluate Polymarket CLOB API vs Proxy for automated execution
+- [ ] EXECUTE: Implement order placement logic (Smart Betting)

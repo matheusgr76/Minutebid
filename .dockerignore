@@ -1,0 +1,24 @@
+# Secrets — never bake credentials into the image
+.env
+
+# Runtime state — ephemeral, not needed in image
+.dashboard_msg_id
+*.log
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+
+# Git history
+.git/
+.gitignore
+
+# Dev/test files
+tests/
+debug_schedule.py
+test_dates.py
+
+# Docs
+*.md
+walkthrough.md

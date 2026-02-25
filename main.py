@@ -15,19 +15,25 @@ import telegram_client
 # ---------------------------------------------------------------------------
 # Logging — console + persistent file for traceability
 # ---------------------------------------------------------------------------
-log_format = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-date_format = "%H:%M:%S"
+def setup_logging():
+    """Unifies logging for console and file across all entry points."""
+    log_format = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    date_format = "%H:%M:%S"
+    
+    # Check if handlers are already configured to avoid duplicate setup
+    if not logging.getLogger().handlers:
+        logging.basicConfig(
+            level=logging.INFO,
+            format=log_format,
+            datefmt=date_format,
+            handlers=[
+                logging.StreamHandler(sys.stdout),
+                logging.FileHandler("minutebid_scan.log", encoding="utf-8")
+            ]
+        )
+    return logging.getLogger("main")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format=log_format,
-    datefmt=date_format,
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler("minutebid_scan.log", encoding="utf-8")
-    ]
-)
-logger = logging.getLogger("main")
+logger = setup_logging()
 
 
 def run_single_scan() -> None:

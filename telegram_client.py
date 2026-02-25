@@ -117,10 +117,11 @@ def _save_dashboard_id(msg_id: int):
     with open(DASHBOARD_FILE, "w") as f:
         f.write(str(msg_id))
 
-def update_scheduler_dashboard(runs: list) -> None:
+def update_scheduler_dashboard(runs: list, force_new: bool = False) -> None:
     """
     Sends or updates a single dashboard message with the current schedule and countdowns.
     Limits to the next 15 games to avoid Telegram's 4096 character limit.
+    If force_new is True, skips editing the previous message and sends a fresh one.
     """
     from datetime import datetime, timezone, timedelta
     
@@ -161,7 +162,8 @@ def update_scheduler_dashboard(runs: list) -> None:
         if len(runs) > MAX_GAMES_DISPLAYED:
             msg += f"_...and {len(runs) - MAX_GAMES_DISPLAYED} more games scheduled._"
 
-    last_id = _get_last_dashboard_id()
+    last_id = None if force_new else _get_last_dashboard_id()
+    
     if last_id:
         success = edit_message(msg, last_id)
         if not success:
@@ -170,6 +172,7 @@ def update_scheduler_dashboard(runs: list) -> None:
             if new_id:
                 _save_dashboard_id(new_id)
     else:
+        # Either No ID exists, or we are forcing a fresh post
         new_id = send_message(msg)
         if new_id:
             _save_dashboard_id(new_id)

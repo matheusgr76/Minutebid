@@ -9,16 +9,19 @@ A manually-triggered Python script that scans soccer markets. It uses a **"Slow 
 
 | File | Responsibility | Status |
 |------|---------------|--------|
-| `config.py` | All constants, thresholds, API base URLs | ✅ Done — needs Odds API constants |
+| `config.py` | All constants, thresholds, API base URLs | ✅ Done |
 | `polymarket_client.py` | Gamma API + CLOB API HTTP calls | ✅ Done |
 | `sports_ws.py` | Polymarket Sports WebSocket → live game minute/score | ✅ Done |
 | `odds_api_client.py` | The Odds API → reference prices from major bookmakers | ✅ Done |
 | `scanner.py` | Pure filter: 75-90 min + >80% prob + edge calc | ✅ Done |
 | `display.py` | Terminal table output | ✅ Done |
 | `main.py` | Entry point — orchestrates one scan | ✅ Done |
+| `scheduler.py` | Long-running loop: discovery, wakeup, active scan sessions | ✅ Done |
 | `requirements.txt` | Dependencies | ✅ Done |
 | `.env.example` | Credential template | ✅ Done |
 | `telegram_client.py` | Telegram alerts and heartbeats | ✅ Done |
+| `Dockerfile` | Container definition for cloud deployment | ✅ Done |
+| `.dockerignore` | Excludes secrets and artifacts from Docker image | ✅ Done |
 
 ---
 
@@ -56,10 +59,18 @@ All modules wired, imports verified, dependencies installed.
 - Implemented `update_scheduler_dashboard` in `telegram_client.py`: sends/edits a single live message with T-minus countdowns, capped at 15 games to respect Telegram's 4096-char limit.
 - Dashboard update throttled to every 300s (5 min).
 
-### Phase 9 — Slow Pulse Monitoring (Strategic Pivot) [/]
-- Reduce scan frequency to **120 seconds** (2 minutes) to conserve API quota.
-- Pivot from "Edge Hunting" to **"Consensus Following"**: trigger alerts when bookmaker odds for a favorite drop below a resolution threshold (e.g., 1.05).
-- Simplify scanner logic: verify bookmaker consensus late in the game (Minute 80+) and notify for manual execution on Polymarket.
+### Phase 9 — Slow Pulse Monitoring (Strategic Pivot) ✅
+- Reduced scan frequency to **120 seconds** (2 minutes) to conserve API quota.
+- Pivoted from "Edge Hunting" to **"Consensus Following"**: trigger alerts when bookmaker odds for a favorite drop below a resolution threshold (e.g., 1.05).
+- Simplified scanner logic: verify bookmaker consensus late in the game (Minute 80+) and notify for manual execution on Polymarket.
+
+### Phase 14 — Cloud Deployment (Koyeb) ✅
+- Moved from local Windows machine to Koyeb free tier (always-on Linux container).
+- Service type: **Worker** (background process, no HTTP endpoint required).
+- Added `Dockerfile` using `python:3.12-slim` with `PYTHONUNBUFFERED=1` for real-time log streaming.
+- Added `.dockerignore` to exclude `.env`, logs, and `__pycache__` from the image.
+- Added `import platform` guard to `scheduler.py` so `SetThreadExecutionState` is a no-op on Linux.
+- Credentials (`ODDS_API_KEY`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`) set as env vars in Koyeb UI — `python-dotenv` reads OS env vars transparently when no `.env` file is present.
 
 ---
 

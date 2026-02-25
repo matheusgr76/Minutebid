@@ -3,7 +3,7 @@
 
 import logging
 from rapidfuzz import fuzz
-from config import MIN_MINUTE, MAX_MINUTE, WIN_PROB_THRESHOLD, MIN_EDGE_THRESHOLD
+from config import MIN_MINUTE, MAX_MINUTE, WIN_PROB_THRESHOLD, MIN_EDGE_THRESHOLD, RESOLVED_ODDS_THRESHOLD
 
 logger = logging.getLogger(__name__)
 

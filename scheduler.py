@@ -2,6 +2,7 @@
 # Prevents quota waste by only scanning during the 75-90+ minute window.
 
 import logging
+import platform
 import time
 import ctypes
 from datetime import datetime, timedelta, timezone
@@ -25,9 +26,11 @@ ES_SYSTEM_REQUIRED = 0x00000001
 
 def set_windows_sleep_inhibition(prevent: bool):
     """
-    Tells Windows to prevent (or allow) system sleep. 
-    Does NOT prevent the display from turning off.
+    Tells Windows to prevent (or allow) system sleep.
+    No-op on non-Windows platforms (e.g., Linux cloud containers).
     """
+    if platform.system() != "Windows":
+        return
     try:
         if prevent:
             # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
@@ -96,23 +99,41 @@ def run_scheduler_loop():
     logger.info("Starting Smart Scheduler Loop...")
     telegram_client.send_status_update("Smart Scheduler Started 🚀")
     
+    # Track heartbeat for diagnostic purposes
+    last_loop_heartbeat = 0
+    heartbeat_interval = 600 # 10 minutes
+    
     # Prevent system sleep while the bot is active
     set_windows_sleep_inhibition(True)
 
     try:
         last_discovery_time = 0
         last_dashboard_update = 0
+        last_dashboard_repost = 0
         discovery_interval = 3600  # 1 hour
-        dashboard_interval = 120   # 2 minutes — better responsiveness for live monitoring
+        dashboard_interval = 600   # 10 minutes — Reduce noise as requested
+        repost_interval = 7200     # 2 hours — Post a fresh message to avoid scrolling
         runs = []
 
         def _check_dashboard(runs_list: list):
             """Helper to update the Telegram dashboard if interval passed."""
-            nonlocal last_dashboard_update
+            nonlocal last_dashboard_update, last_dashboard_repost
             now_ts = time.time()
+            
+            # Check for 2-hour RE-POST (Fresh Message)
+            if now_ts - last_dashboard_repost > repost_interval:
+                try:
+                    telegram_client.update_scheduler_dashboard(runs_list, force_new=True)
+                    last_dashboard_repost = now_ts
+                    last_dashboard_update = now_ts # Also resets update timer
+                    return
+                except Exception as e:
+                    logger.error("Dashboard re-post failed: %s", e)
+
+            # Check for regular EDIT (Update same message)
             if now_ts - last_dashboard_update > dashboard_interval:
                 try:
-                    telegram_client.update_scheduler_dashboard(runs_list)
+                    telegram_client.update_scheduler_dashboard(runs_list, force_new=False)
                 except Exception as e:
                     logger.error("Dashboard update failed: %s", e)
                 last_dashboard_update = now_ts
@@ -170,13 +191,27 @@ def run_scheduler_loop():
                 continue
 
             # 3. If no match is active, sleep (60s check for dashboard/active runs)
+            if now_ts - last_loop_heartbeat > heartbeat_interval:
+                logger.info("Scheduler Heartbeat: Loop active. Monitoring %d upcoming matches.", len(runs))
+                last_loop_heartbeat = now_ts
+
             time.sleep(60)
+    except Exception as exc:
+        import traceback
+        error_msg = traceback.format_exc()
+        logger.critical("CRITICAL: Scheduler process crashed with unhandled exception:\n%s", error_msg)
+        try:
+            telegram_client.send_status_update("⚠️ Scheduler CRASHED! Check logs for details.")
+        except:
+            pass
+        raise
     finally:
         # Restore normal sleep settings on exit
         set_windows_sleep_inhibition(False)
+        logger.info("Scheduler loop exited.")
 
 
 if __name__ == "__main__":
-    # Setup logging for standalone execution
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    # Setup unified logging (console + file)
+    main.setup_logging()
     run_scheduler_loop()

@@ -20,6 +20,7 @@ LEAGUE_SERIES_IDS = {
 LEAGUE_TAG_SLUGS = {
     'bundesliga': 'bundesliga',
     'champions_league': 'ucl',
+    'europa_league': 'uel',
 }
 
 # ---------------------------------------------------------------------------

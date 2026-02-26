@@ -69,6 +69,11 @@ All modules wired, imports verified, dependencies installed.
 - Removed dead constants from `config.py` (`ODDS_API_*`, `RESOLVED_ODDS_THRESHOLD`, `MIN_EDGE_THRESHOLD`).
 - `ODDS_API_KEY` credential no longer required.
 
+### Phase 16b — Fix: display.py Silent Crash on Bet Signal ✅
+- Root cause: `display.print_results()` still referenced old Odds API era fields (`reference_prob`, `resolved_outcome`, `score`). Any real opportunity caused a `KeyError`, which the scheduler's `try/except` swallowed silently — Telegram alert was never sent.
+- Fix: updated `display.py` print loop to use current scanner output fields: `outcome` and `poly_prob`.
+- Impact: this bug was present since the Session 15 Polymarket-only pivot. Every real signal in that window was silently discarded before reaching Telegram.
+
 ### Phase 16 — Drop WebSocket, Time-Based Minute Detection ✅
 - Root cause: `wss://sports-api.polymarket.com/ws` returns 0 events every scan — the API requires a subscription message that was never sent. Scanner always skipped every game silently.
 - Fix: deleted `sports_ws.py` entirely. `scanner.py` now calculates game minute as `(now - kickoff) / 60` using the event's `startTime` from the Gamma API.

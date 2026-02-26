@@ -157,6 +157,13 @@
 
 ---
 
+## Session 16b — Fix: display.py Silent Crash on Bet Signal
+- [x] THINK: Root cause — `display.print_results()` referenced stale fields (`reference_prob`, `resolved_outcome`, `score`) from pre-pivot era; crashed with `KeyError` on every real opportunity, killing Telegram alert before it sent ✅
+- [x] EXECUTE: Update `display.py` print loop to use current fields (`outcome`, `poly_prob`) ✅
+- [ ] VERIFY: Confirm no crash when opportunity is found; Telegram alert fires end-to-end
+
+---
+
 ## Session 17 — Automatic Betting System (Phase 16)
 - [ ] THINK: Define risk management and staking logic
 - [ ] THINK: Evaluate Polymarket CLOB API vs Proxy for automated execution

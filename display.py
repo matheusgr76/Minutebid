@@ -18,14 +18,13 @@ def print_results(opportunities: list[dict]) -> None:
     print(f"{'STATISTICALLY RESOLVED MATCHES':^80}")
     print("="*80)
     
-    header = f"{'MATCH':<30} | {'MIN':<3} | {'SCORE':<5} | {'RESOLVED':<15} | {'BOOKIE%'}"
+    header = f"{'MATCH':<30} | {'MIN':<3} | {'OUTCOME':<20} | {'POLY%'}"
     print(header)
     print("-" * len(header))
 
     for opp in opportunities:
-        ref_p = f"{opp['reference_prob']*100:>6.1f}%"
-        
-        print(f"{opp['match'][:30]:<30} | {opp['minute']:<3} | {opp['score']:<5} | {opp['resolved_outcome'][:15]:<15} | {ref_p}")
+        poly_p = f"{opp['poly_prob']*100:>5.1f}%"
+        print(f"{opp['match'][:30]:<30} | {opp['minute']:<3} | {opp['outcome'][:20]:<20} | {poly_p}")
 
     print("="*80 + "\n")
 

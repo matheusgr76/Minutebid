@@ -131,12 +131,18 @@
 ## Session 15 — Scanner Pivot: Polymarket-Only (Hotfix)
 - [x] THINK: Root cause — `ODDS_API_SPORT = "soccer"` is invalid key + free tier has no live odds → scanner never fired ✅
 - [x] THINK: Decision — drop Odds API entirely, alert on Polymarket price >= 80% during 75-90+ min ✅
-- [ ] EXECUTE: Simplify `scanner.py` to Polymarket-only (remove `reference_prices` param)
-- [ ] EXECUTE: Remove Odds API call from `main.py`
-- [ ] EXECUTE: Update `telegram_client.py` alert format
-- [ ] EXECUTE: Remove dead constants from `config.py`
-- [ ] EXECUTE: Delete `odds_api_client.py`
+- [x] EXECUTE: Simplify `scanner.py` to Polymarket-only (remove `reference_prices` param) ✅
+- [x] EXECUTE: Remove Odds API call from `main.py` ✅
+- [x] EXECUTE: Update `telegram_client.py` alert format ✅
+- [x] EXECUTE: Remove dead constants from `config.py` ✅
+- [x] EXECUTE: Delete `odds_api_client.py` ✅
 - [ ] VERIFY: Confirm bet signal fires correctly during next live match
+
+---
+
+## Session 15b — Add UEL (UEFA Europa League)
+- [x] EXECUTE: Add `'europa_league': 'uel'` to `LEAGUE_TAG_SLUGS` in `config.py` ✅
+- [ ] VERIFY: Confirm UEL matches appear in next daily discovery dashboard
 
 ---
 

@@ -69,6 +69,10 @@ All modules wired, imports verified, dependencies installed.
 - Removed dead constants from `config.py` (`ODDS_API_*`, `RESOLVED_ODDS_THRESHOLD`, `MIN_EDGE_THRESHOLD`).
 - `ODDS_API_KEY` credential no longer required.
 
+### Phase 15 — Add UEFA Europa League (UEL) ✅
+- Added `'europa_league': 'uel'` to `LEAGUE_TAG_SLUGS` in `config.py`.
+- UEL now included in daily discovery alongside UCL, Bundesliga, EPL, La Liga, and Serie A.
+
 ### Phase 14 — Cloud Deployment (Koyeb) ✅
 - Moved from local Windows machine to Koyeb free tier (always-on Linux container).
 - Service type: **Worker** (background process, no HTTP endpoint required).

@@ -162,3 +162,44 @@ graph TD
 - Run discovery and confirm the list of "Today's Games" is accurate.
 - Verify the bot sleeps/wakes correctly during a simulated match window.
 - Monitor Odds API call logs to ensure zero waste.
+
+---
+
+## Future Development — Phase 16: Automatic Betting
+
+### Overview
+Once the bot proves profitable through manual observation, Minutebid can be extended to place bets automatically using a fixed budget (e.g. $10 USD) with no manual intervention per signal.
+
+### How It Works
+Polymarket exposes a CLOB (Central Limit Order Book) API that supports programmatic order placement. The official `py-clob-client` Python SDK handles cryptographic signing and order building.
+
+### New Components Required
+
+| File | Role |
+|------|------|
+| `trader.py` | New module: `place_order(token_id, stake_usdc)` via `py-clob-client` |
+| `risk_manager.py` | New module: budget cap, per-bet stake, duplicate-market guard |
+| `config.py` | Add `MAX_BET_BUDGET_USD`, `BET_STAKE_USD`, `CLOB_API_KEY`, `CLOB_API_SECRET` |
+| `main.py` | Wire opportunity → risk_manager → trader |
+| `telegram_client.py` | Add `send_order_confirmation()` alert |
+| `.env.example` | Add `CLOB_API_KEY`, `CLOB_API_SECRET` |
+
+### Signal Flow (new)
+```
+scanner finds opportunity
+  → risk_manager approves stake size
+  → trader.place_order(token_id, stake_usdc)
+  → Telegram: "✅ BET PLACED: $1.00 on Arsenal @ 87¢"
+```
+
+### Prerequisites Before Building
+1. 2–3 weeks of live signal monitoring confirms strategy profitability
+2. Fund a Polymarket account with USDC on Polygon
+3. Generate CLOB API credentials in Polymarket UI
+4. Decide on staking strategy (flat stake recommended first)
+
+### Key Risks
+- **Key exposure**: private key in Koyeb env vars (same pattern as TELEGRAM_TOKEN — acceptable)
+- **Runaway bets**: scanner bug fires many signals → `MAX_BET_BUDGET_USD` hard cap prevents overspend
+- **Slippage**: market orders near 87¢ may fill worse; check `bestAsk` before committing
+- **CLOB downtime**: order silently fails → must alert on failure via Telegram

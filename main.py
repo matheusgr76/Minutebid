@@ -6,7 +6,6 @@ import sys
 from dotenv import load_dotenv
 
 import polymarket_client
-import sports_ws
 import scanner
 import display
 import telegram_client
@@ -45,11 +44,8 @@ def run_single_scan() -> None:
         logger.info("No active soccer events found on Polymarket right now.")
         return
 
-    # 4. Fetch live game states via Sports WebSocket
-    game_states = sports_ws.get_live_game_states()
-
-    # 5. Filter: find outcomes >= 80% on Polymarket in the 75-90+ min window
-    opportunities = scanner.filter_opportunities(events, prices, game_states)
+    # 2. Filter: find outcomes >= 80% on Polymarket in the 75-90+ min window
+    opportunities = scanner.filter_opportunities(events, prices)
     display.print_results(opportunities)
     
     # 7. Notify via Telegram

@@ -146,7 +146,18 @@
 
 ---
 
-## Session 16 — Automatic Betting System (Phase 15)
+## Session 16 — Fix: Drop Broken WebSocket, Use Time-Based Minute
+- [x] THINK: Root cause — Sports WebSocket returns 0 events every scan; missing subscription message ✅
+- [x] THINK: Decision — drop WebSocket, estimate minute from Gamma API `startTime` + elapsed time ✅
+- [x] EXECUTE: Rewrite `scanner.py` — `_estimate_minute()` replaces `game_states` lookup ✅
+- [x] EXECUTE: Remove `sports_ws` import/call from `main.py` ✅
+- [x] EXECUTE: Remove score line from `telegram_client.py` alert, add `~` prefix to minute ✅
+- [x] EXECUTE: Delete `sports_ws.py` ✅
+- [ ] VERIFY: Confirm bet signal fires during next live game in 75-90+ window
+
+---
+
+## Session 17 — Automatic Betting System (Phase 16)
 - [ ] THINK: Define risk management and staking logic
 - [ ] THINK: Evaluate Polymarket CLOB API vs Proxy for automated execution
 - [ ] EXECUTE: Implement order placement logic (Smart Betting)

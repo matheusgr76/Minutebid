@@ -69,6 +69,13 @@ All modules wired, imports verified, dependencies installed.
 - Removed dead constants from `config.py` (`ODDS_API_*`, `RESOLVED_ODDS_THRESHOLD`, `MIN_EDGE_THRESHOLD`).
 - `ODDS_API_KEY` credential no longer required.
 
+### Phase 16 — Drop WebSocket, Time-Based Minute Detection ✅
+- Root cause: `wss://sports-api.polymarket.com/ws` returns 0 events every scan — the API requires a subscription message that was never sent. Scanner always skipped every game silently.
+- Fix: deleted `sports_ws.py` entirely. `scanner.py` now calculates game minute as `(now - kickoff) / 60` using the event's `startTime` from the Gamma API.
+- `main.py`: removed `sports_ws` import and `get_live_game_states()` call.
+- `telegram_client.py`: removed score line; minute shown as `~82` to indicate estimated value.
+- Net result: scanner is deterministic, no external WebSocket dependency, alerts will fire correctly in the 75–90+ min window.
+
 ### Phase 15 — Add UEFA Europa League (UEL) ✅
 - Added `'europa_league': 'uel'` to `LEAGUE_TAG_SLUGS` in `config.py`.
 - UEL now included in daily discovery alongside UCL, Bundesliga, EPL, La Liga, and Serie A.

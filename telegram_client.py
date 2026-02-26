@@ -74,8 +74,7 @@ def send_opportunity_alert(opp: dict) -> None:
     poly_prob = opp.get('poly_prob', 0) * 100
     msg = f"⚽ *BET SIGNAL*\n\n"
     msg += f"🏟 *Match:* {opp.get('match', 'Unknown')}\n"
-    msg += f"⏱ *Minute:* {opp.get('minute', '?')}\n"
-    msg += f"📊 *Score:* {opp.get('score', '?')}\n\n"
+    msg += f"⏱ *Minute:* ~{opp.get('minute', '?')}\n\n"
     msg += f"🔥 *Outcome:* {opp.get('outcome', '?')}\n"
     msg += f"📍 *Polymarket:* {poly_prob:.1f}¢\n"
     msg += f"\n[View on Polymarket]({opp.get('market_url', 'https://polymarket.com')})"

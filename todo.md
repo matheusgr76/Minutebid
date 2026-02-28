@@ -199,12 +199,22 @@ Branch `feature/automatic-betting` merged to `main` and deployed to Koyeb.
 
 ---
 
-## Session 17c — Hotfix: Invalid Token ID (Near-Resolved Markets)
-- [x] THINK: Root cause — markets at ≥97¢ have CLOB trading suspended; Gamma still returns clobTokenIds but CLOB rejects them with `PolyApiException: Invalid token id` ✅
+## Session 17c — Hotfix: Invalid Token ID (First Hypothesis)
+- [x] THINK: Initial hypothesis — markets at ≥97¢ have CLOB trading suspended; Gamma clobTokenIds rejected ✅
 - [x] EXECUTE: Add `MAX_WIN_PROB_THRESHOLD = 0.97` to `config.py` ✅
 - [x] EXECUTE: Update `scanner.py` filter to `WIN_PROB_THRESHOLD <= prob < MAX_WIN_PROB_THRESHOLD` ✅
-- [x] EXECUTE: Update `main.py` to silently log (not Telegram alert) when `Invalid token id` error is caught ✅
-- [ ] VERIFY: Confirm next live bet fires cleanly with no "Invalid token id" in logs
+- [x] EXECUTE: Update `main.py` to silently log (not Telegram alert) when `Invalid token id` is caught ✅
+- [x] VERIFY: Hypothesis refuted — same error at 80.0¢ (Werder Bremen win, clearly non-resolved) ✅
+
+---
+
+## Session 17d — Hotfix: True Root Cause — Gamma clobTokenIds Unreliable ✅
+- [x] THINK: True root cause confirmed — Gamma's `clobTokenIds` field is NOT the authoritative CLOB trading token. The CLOB's own `GET /markets/{condition_id}` public endpoint is the correct source ✅
+- [x] THINK: Evidence: 80¢ main market + 83¢ O/U 1.5 + 92¢ Spread all failed identically. Probability irrelevant. Token format mismatch is the cause ✅
+- [x] EXECUTE: Add `get_clob_yes_token_id(condition_id)` to `polymarket_client.py` — hits `GET /clob.polymarket.com/markets/{condition_id}`, extracts YES token ✅
+- [x] EXECUTE: Add `condition_id` (best market's conditionId) to opportunity dict in `scanner.py` ✅
+- [x] EXECUTE: Update `main.py` — resolve authoritative token_id from CLOB API before placing order; Gamma's value is fallback only ✅
+- [ ] VERIFY: First `✅ BET PLACED` on Telegram — pending next live game
 
 ---
 

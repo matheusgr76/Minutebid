@@ -70,16 +70,32 @@ All modules wired, imports verified, dependencies installed.
 - Removed dead constants from `config.py` (`ODDS_API_*`, `RESOLVED_ODDS_THRESHOLD`, `MIN_EDGE_THRESHOLD`).
 - `ODDS_API_KEY` credential no longer required.
 
-### Phase 17 — Automatic Betting via CLOB ✅
+### Phase 17 — Automatic Betting via CLOB ✅ LIVE
 - **Trigger**: manual signal capture too slow; live signals confirmed correct; waived 2-3 week observation prerequisite.
 - **New modules**: `risk_manager.py` (session-scoped budget cap + duplicate guard), `trader.py` (py-clob-client wrapper, FOK market orders).
-- **Key fix in `scanner.py`**: added `token_id` field (`clobTokenIds[0]`) to opportunity dict — previously missing, order placement would have been impossible.
-- **Signal flow**: scanner → Telegram alert → `risk_manager.approve()` → `trader.place_order()` → `risk_manager.record_bet()` → Telegram confirmation / failure alert.
+- **Signal flow**: scanner → Telegram alert → `risk_manager.approve()` → CLOB token_id lookup → `trader.place_order()` → `risk_manager.record_bet()` → Telegram confirmation / failure alert.
 - **Graceful degradation**: if CLOB credentials absent, bot continues in alert-only mode (no crash).
 - **Budget**: `MAX_BET_BUDGET_USD = $5.00` per session, `BET_STAKE_USD = $1.00` flat stake.
 - **Order type**: FOK (Fill or Kill) — immediate fill or cancelled; no stale orders after game ends.
 - **Credentials added**: `CLOB_PK`, `CLOB_API_KEY`, `CLOB_API_SECRET`, `CLOB_API_PASSPHRASE`.
-- **Branch**: `feature/automatic-betting` — pending review before merge to main.
+- **Deployed**: merged to main, live on Koyeb.
+
+### Phase 17b — Hotfix: py-clob-client `side` Argument ✅
+- **Error**: `MarketOrderArgs.__init__() missing 1 required positional argument: 'side'`
+- **Root cause**: py-clob-client requires an explicit integer `side` param; `BUY` constant is not exported from `clob_types` in the installed version.
+- **Fix**: defined `_SIDE_BUY = 0` locally in `trader.py`. No external import needed, works across all library versions.
+
+### Phase 17c — Hotfix: Upper Probability Bound ✅
+- **Error**: `PolyApiException[status_code=400, error_message={'error': 'Invalid token id'}]` on markets at 98–100¢.
+- **Hypothesis**: CLOB suspends trading on near-resolved markets; Gamma still returns token IDs but CLOB rejects them.
+- **Fix**: added `MAX_WIN_PROB_THRESHOLD = 0.97` — scanner now only surfaces bets in `[0.80, 0.97)`.
+- **Status**: partial fix — 17c filtered the 98¢+ cases but error persisted at 80¢ → hypothesis refuted. See 17d.
+
+### Phase 17d — Hotfix: Authoritative CLOB Token ID ✅
+- **True root cause**: Gamma's `clobTokenIds` field is NOT the authoritative token for CLOB order placement. The CLOB rejects it across all probability levels (80¢, 83¢, 92¢ all failed identically). The CLOB's own `GET /markets/{condition_id}` public endpoint is the correct source.
+- **Evidence**: Live failures — Werder Bremen win (80¢), O/U 1.5 (83¢), Spread -1.5 (92¢) — same error, different probabilities.
+- **Fix**: `polymarket_client.get_clob_yes_token_id(condition_id)` fetches YES token from CLOB at bet time. `scanner.py` now surfaces `condition_id` in opportunity dict. `main.py` resolves authoritative token_id before placing order; Gamma's value is fallback only.
+- **Key lesson**: Gamma API = discovery and price data. CLOB API = trading token IDs. Never mix sources.
 
 ### Phase 16b — Fix: display.py Silent Crash on Bet Signal ✅
 - Root cause: `display.print_results()` still referenced old Odds API era fields (`reference_prob`, `resolved_outcome`, `score`). Any real opportunity caused a `KeyError`, which the scheduler's `try/except` swallowed silently — Telegram alert was never sent.
@@ -107,7 +123,7 @@ All modules wired, imports verified, dependencies installed.
 
 ---
 
-## Data Flow (current — Session 17)
+## Data Flow (current — Session 17d)
 
 ```mermaid
 graph TD
@@ -116,23 +132,15 @@ graph TD
     C -->|get_active_soccer_events| D[Gamma API]
     D --> E{scanner.filter_opportunities}
     E -->|minute from startTime + elapsed| E
-    E -->|prob >= 80% in min 75-120| F[Telegram Alert]
+    E -->|80% <= prob < 97% in min 75-120| F[Telegram Alert]
     F --> G{risk_manager.approve}
-    G -->|ok| H[trader.place_order FOK]
     G -->|duplicate / budget| I[skip silently]
+    G -->|ok| L[get_clob_yes_token_id via CLOB API]
+    L -->|YES token resolved| H[trader.place_order FOK]
+    L -->|lookup failed| H[trader.place_order FOK with Gamma fallback]
     H -->|filled| J[Telegram: BET PLACED]
-    H -->|failed| K[Telegram: ORDER FAILED]
-```
-
-## Data Flow (Session 17 — Automatic Betting — archived diagram)
-
-```mermaid
-graph TD
-    A[scanner finds opportunity] --> B{risk_manager}
-    B -->|budget ok, not duplicate| C[trader.place_order]
-    B -->|budget exceeded| D[Telegram: budget warning]
-    C -->|order filled| E[Telegram: BET PLACED]
-    C -->|order failed| F[Telegram: order failure alert]
+    H -->|Invalid token id| M[log WARNING only]
+    H -->|other error| K[Telegram: ORDER FAILED]
 ```
 
 ---

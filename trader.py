@@ -8,7 +8,7 @@ import os
 from py_clob_client.client import ClobClient
 from py_clob_client.clob_types import ApiCreds, MarketOrderArgs, OrderType
 
-_SIDE_BUY = 0  # py-clob-client side constant: BUY=0, SELL=1
+_SIDE_BUY = "BUY"  # py-clob-client >=0.16: expects string 'BUY' or 'SELL'
 
 from config import CLOB_HOST, CLOB_CHAIN_ID
 

@@ -10,9 +10,8 @@ A manually-triggered Python script that scans soccer markets. It uses a **"Slow 
 | File | Responsibility | Status |
 |------|---------------|--------|
 | `config.py` | All constants, thresholds, API base URLs | ✅ Done |
-| `polymarket_client.py` | Gamma API + CLOB API HTTP calls | ✅ Done |
-| `sports_ws.py` | Polymarket Sports WebSocket → live game minute/score | ✅ Done |
-| `scanner.py` | Pure filter: 75-90 min + Polymarket price >= 80% | ✅ Done |
+| `polymarket_client.py` | Gamma API fetching, schedule discovery, price extraction | ✅ Done |
+| `scanner.py` | Pure filter: time-based minute + Polymarket price >= 80% | ✅ Done |
 | `display.py` | Terminal table output | ✅ Done |
 | `main.py` | Entry point — orchestrates one scan | ✅ Done |
 | `scheduler.py` | Long-running loop: discovery, wakeup, active scan sessions | ✅ Done |
@@ -21,6 +20,8 @@ A manually-triggered Python script that scans soccer markets. It uses a **"Slow 
 | `telegram_client.py` | Telegram alerts and heartbeats | ✅ Done |
 | `Dockerfile` | Container definition for cloud deployment | ✅ Done |
 | `.dockerignore` | Excludes secrets and artifacts from Docker image | ✅ Done |
+| `risk_manager.py` | Budget cap, per-bet stake sizing, duplicate guard | 🔜 Session 17 |
+| `trader.py` | CLOB order placement via `py-clob-client` | 🔜 Session 17 |
 
 ---
 
@@ -95,25 +96,37 @@ All modules wired, imports verified, dependencies installed.
 
 ---
 
-## Data Flow
+## Data Flow (current — Session 16b)
 
 ```mermaid
 graph TD
     A[scheduler.py] -->|1hr loop| B(Gamma API Discovery)
-    A -->|Wakeup| C(main.py)
-    C -->|Fetch| D[Gamma/Odds/WS APIs]
-    D --> E{Scanner Filter}
-    E -->|Success| F[Telegram Alert]
+    A -->|Wakeup at kickoff+80min| C(main.py)
+    C -->|get_active_soccer_events| D[Gamma API]
+    D --> E{scanner.filter_opportunities}
+    E -->|minute from startTime + elapsed| E
+    E -->|prob >= 80% in min 75-120| F[Telegram Alert]
     E -->|Display| G[Terminal UI]
+```
+
+## Data Flow (Session 17 — Automatic Betting)
+
+```mermaid
+graph TD
+    A[scanner finds opportunity] --> B{risk_manager}
+    B -->|budget ok, not duplicate| C[trader.place_order]
+    B -->|budget exceeded| D[Telegram: budget warning]
+    C -->|order filled| E[Telegram: BET PLACED]
+    C -->|order failed| F[Telegram: order failure alert]
 ```
 
 ---
 
 ## Key Constraints
-- Read-only — no order placement
-- No polling loop — one scan per manual run
-- Credentials: `ODDS_API_KEY` in `.env`, never in code
+- Credentials: never hardcoded, always in env vars
 - All network calls: 10s timeout, fail gracefully with log
+- Budget hard cap: `MAX_BET_BUDGET_USD` enforced before every order
+- No duplicate bets: same market cannot be bet twice in one session
 
 ---
 

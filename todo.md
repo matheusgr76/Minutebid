@@ -136,13 +136,13 @@
 - [x] EXECUTE: Update `telegram_client.py` alert format ✅
 - [x] EXECUTE: Remove dead constants from `config.py` ✅
 - [x] EXECUTE: Delete `odds_api_client.py` ✅
-- [ ] VERIFY: Confirm bet signal fires correctly during next live match
+- [x] VERIFY: Confirm bet signal fires correctly during next live match ✅
 
 ---
 
 ## Session 15b — Add UEL (UEFA Europa League)
 - [x] EXECUTE: Add `'europa_league': 'uel'` to `LEAGUE_TAG_SLUGS` in `config.py` ✅
-- [ ] VERIFY: Confirm UEL matches appear in next daily discovery dashboard
+- [x] VERIFY: Confirmed UEL matches appear in daily discovery dashboard ✅
 
 ---
 
@@ -153,18 +153,39 @@
 - [x] EXECUTE: Remove `sports_ws` import/call from `main.py` ✅
 - [x] EXECUTE: Remove score line from `telegram_client.py` alert, add `~` prefix to minute ✅
 - [x] EXECUTE: Delete `sports_ws.py` ✅
-- [ ] VERIFY: Confirm bet signal fires during next live game in 75-90+ window
+- [x] VERIFY: Bet signal confirmed firing during live games ✅
 
 ---
 
 ## Session 16b — Fix: display.py Silent Crash on Bet Signal
 - [x] THINK: Root cause — `display.print_results()` referenced stale fields (`reference_prob`, `resolved_outcome`, `score`) from pre-pivot era; crashed with `KeyError` on every real opportunity, killing Telegram alert before it sent ✅
 - [x] EXECUTE: Update `display.py` print loop to use current fields (`outcome`, `poly_prob`) ✅
-- [ ] VERIFY: Confirm no crash when opportunity is found; Telegram alert fires end-to-end
+- [x] VERIFY: Telegram alerts confirmed firing end-to-end ✅
 
 ---
 
-## Session 17 — Automatic Betting System (Phase 16)
-- [ ] THINK: Define risk management and staking logic
-- [ ] THINK: Evaluate Polymarket CLOB API vs Proxy for automated execution
-- [ ] EXECUTE: Implement order placement logic (Smart Betting)
+## Session 17 — Automatic Betting (Phase 17) — branch: feature/automatic-betting
+
+### Prerequisites (human gates — must be satisfied before EXECUTE)
+- [ ] 2–3 weeks of live signal observation to validate strategy profitability
+- [ ] Fund Polymarket account with USDC on Polygon
+- [ ] Generate CLOB API key + secret in Polymarket UI
+
+### Architecture Design
+- [ ] THINK: Staking strategy — flat stake vs Kelly criterion
+- [ ] THINK: Risk manager design — budget cap, per-bet stake, duplicate-market guard
+- [ ] THINK: Order flow — market buy vs limit order; slippage handling
+- [ ] THINK: Failure modes — CLOB downtime, partial fill, reject handling
+
+### Implementation (pending THINK approval)
+- [ ] EXECUTE: `risk_manager.py` — budget tracking, stake sizing, duplicate guard
+- [ ] EXECUTE: `trader.py` — `place_order(token_id, stake_usdc)` via `py-clob-client`
+- [ ] EXECUTE: Update `config.py` — add `MAX_BET_BUDGET_USD`, `BET_STAKE_USD`, `CLOB_API_KEY`, `CLOB_API_SECRET`
+- [ ] EXECUTE: Update `main.py` — wire opportunity → risk_manager → trader
+- [ ] EXECUTE: Update `telegram_client.py` — add `send_order_confirmation()` and `send_order_failure()` alerts
+- [ ] EXECUTE: Update `.env.example` — add `CLOB_API_KEY`, `CLOB_API_SECRET`
+
+### Verification
+- [ ] VERIFY: Paper-trade mode (log order intent without executing) passes smoke test
+- [ ] VERIFY: Live test with minimum stake ($1) confirms order placed and confirmed on Polymarket
+- [ ] VERIFY: Budget cap enforced — bot refuses to bet beyond `MAX_BET_BUDGET_USD`

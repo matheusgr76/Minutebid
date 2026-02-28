@@ -1,6 +1,6 @@
 # Minutebid — Project Handoff
 
-> Last updated: Session 18 (2026-02-28)
+> Last updated: Session 18b (2026-02-28)
 
 ## What This Is
 
@@ -140,7 +140,18 @@ Adding credentials to Koyeb's "Secrets" tab is NOT the same as adding them to th
 
 ---
 
-### 6. Polymarket Sports WebSocket silently returns nothing
+### 6. `"no match"` from py-clob-client on illiquid sub-markets
+**Symptom**: `[ERROR] main: Order failed for '... - More Markets': no match`. Telegram sends ORDER FAILED noise every 120s.
+
+**Root cause**: `create_market_order()` internally calls `get_order_book(token_id)` to determine fill price. If the order book has **zero asks** (no sellers), py-clob-client raises `Exception("no match")` client-side — no HTTP request is ever made. This consistently hits "More Markets" spread/O-U events which are thinly traded.
+
+**Fix**: Added `err_str == "no match"` to the silent-log exception guard in `main.py` (alongside `"Invalid token id"`). Both are non-actionable — log warning only, no Telegram alert.
+
+**Diagnostic tip**: If you see "no match" but NOT a preceding `httpx: HTTP Request: POST` log line, it's always this case — client-side, pre-request. If you see "no match" WITH an httpx log line, it's a different error from the CLOB server.
+
+---
+
+### 7. Polymarket Sports WebSocket silently returns nothing
 **Symptom**: Scanner always found 0 events in the active game window.
 
 **Root cause**: `wss://sports-api.polymarket.com/ws` requires a subscription message after connection. Without it, the server never pushes data. The bot connected and read — and received nothing.
@@ -166,4 +177,6 @@ python main.py            # Single scan, alert-only (no betting)
 - Log per-bet record (token_id, stake, fill price, P&L) to a persistent file
 - Session summary Telegram message after each game window closes
 - Distinguish FOK-cancelled vs filled from order response `status` field
-- Silence repeated ORDER FAILED spam — record failed token_ids to prevent retry within same session window
+- Silence auth/infra ORDER FAILED spam (401, 403) — record failed token_ids to prevent retry within same session window (`"no match"` and `"Invalid token id"` are already silenced)
+
+> **Note**: `fly deploy` required to push any code changes live — git push alone does NOT trigger Fly.io rebuild.

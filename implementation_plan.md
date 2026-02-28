@@ -113,6 +113,13 @@ All modules wired, imports verified, dependencies installed.
 - Added `'europa_league': 'uel'` to `LEAGUE_TAG_SLUGS` in `config.py`.
 - UEL now included in daily discovery alongside UCL, Bundesliga, EPL, La Liga, and Serie A.
 
+### Phase 18b — Hotfix: Silence `"no match"` ORDER FAILED Telegram spam ✅
+- **Symptom**: Every scan during a live session sent `ORDER FAILED: no match` to Telegram for "More Markets" spread/O-U sub-markets.
+- **Root cause**: `py_clob_client.create_market_order()` internally calls `calculate_market_price()` → `get_order_book(token_id)`. If `book.asks is None` (zero sellers), it raises `Exception("no match")` **client-side** — no HTTP request is made. Order book is empty on thinly-traded spread markets.
+- **Fix**: Added `err_str == "no match"` to silent-log guard in `main.py` alongside existing `"Invalid token id"` check. Warning logged only; no Telegram noise.
+- **Diagnostic signal**: if "no match" appears WITHOUT a preceding `httpx: HTTP Request: POST` log line, it is always this client-side case.
+- **Deploy note**: `fly deploy` required to push this fix live — `git push` alone does NOT trigger Fly.io rebuild.
+
 ### Phase 17e — Deployment: Resolve CLOB Geoblock → Fly.io São Paulo ✅
 - **Root cause**: All three Koyeb regions are blocked by Polymarket's CLOB geoblock (country-level, not datacenter-IP):
   - Frankfurt = Germany (fully blocked), Singapore (close-only, cannot open new positions), Washington DC = US (fully blocked).
@@ -131,7 +138,7 @@ All modules wired, imports verified, dependencies installed.
 
 ---
 
-## Data Flow (current — Session 18)
+## Data Flow (current — Session 18b)
 
 ```mermaid
 graph TD
@@ -148,7 +155,8 @@ graph TD
     L -->|lookup failed| H[trader.place_order FOK with Gamma fallback]
     H -->|filled| J[Telegram: BET PLACED]
     H -->|Invalid token id| M[log WARNING only]
-    H -->|other error| K[Telegram: ORDER FAILED]
+    H -->|no match - empty order book| M
+    H -->|other error 401/403| K[Telegram: ORDER FAILED]
 ```
 
 ---

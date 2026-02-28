@@ -119,6 +119,8 @@ All modules wired, imports verified, dependencies installed.
 - **Fix**: Added `err_str == "no match"` to silent-log guard in `main.py` alongside existing `"Invalid token id"` check. Warning logged only; no Telegram noise.
 - **Diagnostic signal**: if "no match" appears WITHOUT a preceding `httpx: HTTP Request: POST` log line, it is always this client-side case.
 - **Deploy note**: `fly deploy` required to push this fix live — `git push` alone does NOT trigger Fly.io rebuild.
+- **Verified live (2026-02-28)**: Dortmund vs Bayern O/U 1.5 at 90¢ — BET SIGNAL fired, zero ORDER FAILED Telegram messages, warning logged only. ✅
+- **Side observation**: duplicate BET SIGNAL alerts when opportunity persists across 2+ scan cycles — alerts are not session-deduplicated (only bets are). Planned fix in Session 19.
 
 ### Phase 17e — Deployment: Resolve CLOB Geoblock → Fly.io São Paulo ✅
 - **Root cause**: All three Koyeb regions are blocked by Polymarket's CLOB geoblock (country-level, not datacenter-IP):

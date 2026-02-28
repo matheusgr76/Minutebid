@@ -149,6 +149,8 @@ Adding credentials to Koyeb's "Secrets" tab is NOT the same as adding them to th
 
 **Diagnostic tip**: If you see "no match" but NOT a preceding `httpx: HTTP Request: POST` log line, it's always this case — client-side, pre-request. If you see "no match" WITH an httpx log line, it's a different error from the CLOB server.
 
+**Verified live (2026-02-28)**: Dortmund vs Bayern O/U 1.5 at 90¢ — BET SIGNAL fired, no ORDER FAILED spam, silent log only. ✅
+
 ---
 
 ### 7. Polymarket Sports WebSocket silently returns nothing
@@ -172,8 +174,19 @@ python main.py            # Single scan, alert-only (no betting)
 
 ---
 
+## Current Verification Status
+
+| Item | Status |
+|---|---|
+| `"no match"` spam silenced | ✅ Verified live (2026-02-28, Dortmund-Bayern O/U) |
+| `"Invalid token id"` spam silenced | ✅ Verified (Session 17c/d) |
+| CLOB 403 geoblock resolved | ✅ Verified (Fly.io gru, 200 OK) |
+| CLOB 401 credentials | ⏳ Unverified — credentials re-set; need next liquid win/draw market signal |
+| Duplicate BET SIGNAL alerts | Known behavior — two scan cycles per opportunity; alerts not deduplicated (only bets are) |
+
 ## Next Planned Work (Session 19)
 
+- Deduplicate BET SIGNAL alerts — skip Telegram if same token_id alerted within same session window
 - Log per-bet record (token_id, stake, fill price, P&L) to a persistent file
 - Session summary Telegram message after each game window closes
 - Distinguish FOK-cancelled vs filled from order response `status` field

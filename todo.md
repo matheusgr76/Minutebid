@@ -237,6 +237,9 @@ Branch `feature/automatic-betting` merged to `main` and deployed to Koyeb.
 ## Session 18b — Hotfix: Silence "no match" ORDER FAILED Telegram spam
 - [x] THINK: Root cause — `no match` raised by py-clob-client when order book has zero asks (illiquid sub-markets like More Markets spreads); client-side, no HTTP request made ✅
 - [x] EXECUTE: Add `err_str == "no match"` to silent-log branch in `main.py` exception handler (alongside existing "Invalid token id" guard) ✅
+- [x] VERIFY: Confirmed live — Dortmund vs Bayern O/U 1.5 at 90¢ fired BET SIGNAL; no ORDER FAILED Telegram spam; silently logged as expected ✅
+- [ ] VERIFY: First `✅ BET PLACED` on Telegram — pending next *liquid win/draw market* signal (More Markets O/U are illiquid; credentials 401 fix still unverified)
+- [ ] OBSERVE: Duplicate BET SIGNAL alerts sent when same opportunity persists across 2 scan cycles (120s apart) — alerts not deduplicated; only bets are (RiskManager); planned fix in Session 19
 
 ---
 

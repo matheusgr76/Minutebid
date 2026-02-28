@@ -22,3 +22,6 @@ test_dates.py
 # Docs
 *.md
 walkthrough.md
+
+# Fly.io local state
+.fly/

@@ -153,6 +153,25 @@ def get_soccer_schedule() -> list[dict]:
     return matches
 
 
+def get_clob_yes_token_id(condition_id: str) -> str | None:
+    """
+    Fetch the YES outcome token_id from the CLOB's public /markets endpoint.
+    More reliable than Gamma's clobTokenIds field for order placement.
+    Returns None on failure (caller should fall back to Gamma's token_id).
+    """
+    data = _get(f"{CLOB_API_BASE}/markets/{condition_id}")
+    if not isinstance(data, dict):
+        logger.warning("CLOB /markets lookup returned unexpected type for %s", condition_id)
+        return None
+    for token in data.get("tokens", []):
+        if str(token.get("outcome", "")).lower() == "yes":
+            token_id = token.get("token_id")
+            if token_id:
+                return str(token_id)
+    logger.warning("No YES token found in CLOB /markets response for %s", condition_id)
+    return None
+
+
 def get_market_prices(condition_ids: list[str]) -> dict[str, float]:
     """
     [DEPRECATED] Fetch best-ask prices from CLOB.

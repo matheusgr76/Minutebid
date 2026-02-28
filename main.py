@@ -69,7 +69,17 @@ def run_single_scan(risk_manager: RiskManager = None) -> None:
         if not betting_active:
             continue
 
-        token_id = opp.get("token_id")
+        # Resolve authoritative token_id from CLOB API; Gamma's clobTokenIds is unreliable.
+        condition_id = opp.get("condition_id")
+        token_id = opp.get("token_id")  # Gamma fallback
+        if condition_id:
+            authoritative = polymarket_client.get_clob_yes_token_id(condition_id)
+            if authoritative:
+                token_id = authoritative
+                logger.info("Resolved CLOB token_id for '%s'", opp["match"])
+            else:
+                logger.warning("CLOB token_id lookup failed for '%s' — using Gamma fallback", opp["match"])
+
         if not token_id:
             logger.warning("No token_id for '%s' — skipping bet.", opp["match"])
             continue

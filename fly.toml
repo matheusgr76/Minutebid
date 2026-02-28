@@ -1,7 +1,7 @@
 # fly.toml — Fly.io deployment configuration for Minutebid
 # Region: gru (São Paulo, Brazil) — required for Polymarket CLOB access (Brazil is not geoblocked)
 
-app = "minutebid"
+app = "minutebid-gru"
 primary_region = "gru"
 
 [build]

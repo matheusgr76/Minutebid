@@ -53,12 +53,16 @@ Minutebid is a live soccer betting bot that monitors Polymarket in the 75–90+ 
 
 | Item | Value |
 |------|-------|
-| Platform | Koyeb free tier (Web service) |
-| URL | mathematical-gleda-pennypacker-65bd5af2.koyeb.app |
-| Keep-alive | UptimeRobot pings every 5 min (prevents scale-to-zero) |
+| Platform | Fly.io (~$2.20/month, $25 prepaid credit loaded) |
+| App | `minutebid-gru` |
+| Region | `gru` (São Paulo, Brazil) — required: Brazil is not geoblocked by Polymarket CLOB |
+| URL | `https://minutebid-gru.fly.dev/` |
+| Keep-alive | UptimeRobot pings every 5 min (update monitor to minutebid-gru.fly.dev) |
 | Health check | `GET /` → 200 OK served by `_HealthHandler` on port 8000 (daemon thread) |
-| Auto-deploy | Every push to `main` triggers rebuild |
-| Credentials | Set as masked env vars in Koyeb UI — never in `.env` in production |
+| Deploy | Manual — `fly deploy` from project root (no auto-deploy on push) |
+| Credentials | Set via `fly secrets set` — 6 secrets deployed; never in `.env` in production |
+| Config | `fly.toml` in project root — 1 machine, shared-cpu-1x 256MB, auto-stop off |
+| Previous platform | Koyeb — **RETIRED** — all regions (Frankfurt/Germany, Singapore, Washington DC/US) are blocked or restricted by Polymarket's CLOB geoblock |
 
 ---
 

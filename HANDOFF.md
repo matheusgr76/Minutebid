@@ -1,6 +1,6 @@
 # Minutebid — Project Handoff
 
-> Last updated: Session 18b (2026-02-28)
+> Last updated: Session 19 (2026-02-28)
 
 ## What This Is
 
@@ -43,6 +43,7 @@ Minutebid is a live soccer betting bot that monitors Polymarket in the 75–90+ 
 - **Active scan window**: 35 min from wakeup (`SESSION_DURATION_MINUTES`)
 - **Scan cadence**: every 120s during active window (`SCAN_INTERVAL_SLOW`)
 - **Bet trigger**: `80% <= bestAsk < 97%` in minute 75–120
+- **Market scope**: moneyline (1X2) events only — Player Props, Total Corners, Halftime Result, Exact Score, More Markets, Draw No Bet are excluded at the API client level
 - **Bet size**: $1.00 flat (`BET_STAKE_USD`), hard cap $5.00/session (`MAX_BET_BUDGET_USD`)
 - **Estimated minute**: `(now - event.startTime) / 60` — no WebSocket required
 - **Leagues**: EPL, La Liga, Serie A (series IDs), Bundesliga, UCL, UEL (tag slugs)
@@ -184,7 +185,7 @@ python main.py            # Single scan, alert-only (no betting)
 | CLOB 401 credentials | ⏳ Unverified — credentials re-set; need next liquid win/draw market signal |
 | Duplicate BET SIGNAL alerts | Known behavior — two scan cycles per opportunity; alerts not deduplicated (only bets are) |
 
-## Next Planned Work (Session 19)
+## Next Planned Work (Session 20)
 
 - Deduplicate BET SIGNAL alerts — skip Telegram if same token_id alerted within same session window
 - Log per-bet record (token_id, stake, fill price, P&L) to a persistent file

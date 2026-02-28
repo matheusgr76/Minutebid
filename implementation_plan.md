@@ -113,6 +113,12 @@ All modules wired, imports verified, dependencies installed.
 - Added `'europa_league': 'uel'` to `LEAGUE_TAG_SLUGS` in `config.py`.
 - UEL now included in daily discovery alongside UCL, Bundesliga, EPL, La Liga, and Serie A.
 
+### Phase 19 — Moneyline-Only Filter ✅
+- **Problem**: Dashboard showed 41 monitored games including Player Props, Total Corners, Halftime Result, Exact Score, and More Markets sub-market events — only 1X2 moneyline events are wanted.
+- **Root cause**: `get_soccer_schedule()` and `get_active_soccer_events()` included all Polymarket event variants. The old `_SCHEDULE_SUFFIXES` / `_base_match_title()` only deduplicated "- More Markets", "- Winner", "- Draw No Bet" but did NOT exclude "- Player Props", "- Total Corners", etc.
+- **Fix**: Replaced `_base_match_title()` with `_moneyline_base_title()` in `polymarket_client.py`. Returns `None` for any title containing " - " that is not "- Winner" (moneyline naming variant). Both `add_events()` (scanner) and `find_matches()` (schedule) skip events where result is `None`.
+- **Impact**: Dashboard count drops significantly (41 → ~8 per typical match day). Scanner cannot fire on player prop or corner markets.
+
 ### Phase 18b — Hotfix: Silence `"no match"` ORDER FAILED Telegram spam ✅
 - **Symptom**: Every scan during a live session sent `ORDER FAILED: no match` to Telegram for "More Markets" spread/O-U sub-markets.
 - **Root cause**: `py_clob_client.create_market_order()` internally calls `calculate_market_price()` → `get_order_book(token_id)`. If `book.asks is None` (zero sellers), it raises `Exception("no match")` **client-side** — no HTTP request is made. Order book is empty on thinly-traded spread markets.
@@ -140,7 +146,7 @@ All modules wired, imports verified, dependencies installed.
 
 ---
 
-## Data Flow (current — Session 18b)
+## Data Flow (current — Session 19)
 
 ```mermaid
 graph TD

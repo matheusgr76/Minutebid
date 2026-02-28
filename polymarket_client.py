@@ -58,6 +58,9 @@ def get_active_soccer_events() -> tuple[list[dict], dict[str, float]]:
             return
         for event in data:
             event_id = str(event.get("id"))
+            title = event.get("title", "")
+            if _moneyline_base_title(title) is None:
+                continue  # Skip non-moneyline sub-markets (Player Props, Total Corners, etc.)
             if event_id not in seen_ids:
                 all_events.append(event)
                 seen_ids.add(event_id)
@@ -92,15 +95,21 @@ def get_active_soccer_events() -> tuple[list[dict], dict[str, float]]:
     return all_events, market_prices
 
 
-_SCHEDULE_SUFFIXES = (" - more markets", " - winner", " - draw no bet")
+_WINNER_SUFFIX = " - winner"
 
 
-def _base_match_title(title: str) -> str:
-    """Strip Polymarket sub-market suffixes to get the canonical match title."""
+def _moneyline_base_title(title: str) -> str | None:
+    """
+    Return the normalized base match title if this is a moneyline (1X2) event, else None.
+    Moneyline: plain "Team A vs Team B" or "Team A vs Team B - Winner".
+    All other sub-market variants (Player Props, Total Corners, Halftime Result,
+    Exact Score, More Markets, Draw No Bet, etc.) return None and are excluded.
+    """
     lower = title.lower()
-    for suffix in _SCHEDULE_SUFFIXES:
-        if lower.endswith(suffix):
-            return title[:len(title) - len(suffix)].strip()
+    if lower.endswith(_WINNER_SUFFIX):
+        return title[:len(title) - len(_WINNER_SUFFIX)].strip()
+    if " - " in title:
+        return None  # Non-moneyline sub-market
     return title.strip()
 
 
@@ -109,8 +118,8 @@ def get_soccer_schedule() -> list[dict]:
     Fetch upcoming soccer matches from specific leagues.
     Returns a list of match event dicts with at least 'id', 'title', and 'startTime'.
     Filters for events that look like individual matches (containing " vs " or " v ").
-    Deduplicates by normalized title to exclude Polymarket sub-market variants
-    (e.g. "Match X - More Markets" is dropped when "Match X" is already present).
+    Only includes moneyline (1X2) events — sub-markets (Player Props, Total Corners,
+    Halftime Result, Exact Score, More Markets, Draw No Bet) are excluded entirely.
     """
     matches = []
     seen_ids = set()
@@ -131,7 +140,9 @@ def get_soccer_schedule() -> list[dict]:
                     break
 
             if is_match:
-                base = _base_match_title(title)
+                base = _moneyline_base_title(title)
+                if base is None:
+                    continue  # Non-moneyline sub-market — exclude entirely
                 if event_id not in seen_ids and base not in seen_titles:
                     if st:
                         matches.append(event)

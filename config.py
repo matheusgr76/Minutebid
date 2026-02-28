@@ -33,6 +33,14 @@ MAX_SCHEDULE_HOURS = 48    # Only monitor matches starting within this window
 SCAN_INTERVAL_SLOW = 120   # 2-minute "Slow Pulse" interval during active monitoring
 
 # ---------------------------------------------------------------------------
+# Betting configuration (Session 17 — Automatic Betting)
+# ---------------------------------------------------------------------------
+MAX_BET_BUDGET_USD = 5.0    # Maximum USDC to spend per game session (hard cap)
+BET_STAKE_USD = 1.0         # Fixed stake per bet in USDC
+CLOB_HOST = "https://clob.polymarket.com"
+CLOB_CHAIN_ID = 137         # Polygon mainnet
+
+# ---------------------------------------------------------------------------
 # Network settings
 # ---------------------------------------------------------------------------
 REQUEST_TIMEOUT_SECONDS = 10   # HTTP request timeout

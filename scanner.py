@@ -43,6 +43,7 @@ def filter_opportunities(
                 "outcome": best["outcome"],
                 "poly_prob": best["probability"],
                 "market_url": f"https://polymarket.com/event/{event.get('slug', event_id)}",
+                "token_id": best.get("token_id"),
             })
 
     logger.info("Found %d opportunities", len(opportunities))
@@ -66,6 +67,7 @@ def _best_outcome(event: dict, prices: dict[str, float]) -> dict | None:
     """Find outcome with highest Polymarket implied probability."""
     best_prob = 0.0
     best_name = None
+    best_token_id = None
 
     for market in event.get("markets", []):
         condition_id = market.get("conditionId") or market.get("condition_id", "")
@@ -73,7 +75,10 @@ def _best_outcome(event: dict, prices: dict[str, float]) -> dict | None:
         if price is not None and price > best_prob:
             best_prob = price
             best_name = market.get("question") or condition_id
+            # clobTokenIds[0] = YES token (the side we bet when bestAsk >= threshold)
+            clob_ids = market.get("clobTokenIds") or []
+            best_token_id = str(clob_ids[0]) if clob_ids else None
 
     if best_name is None:
         return None
-    return {"outcome": str(best_name), "probability": best_prob}
+    return {"outcome": str(best_name), "probability": best_prob, "token_id": best_token_id}

@@ -13,7 +13,8 @@ from dotenv import load_dotenv
 import polymarket_client
 import main
 import telegram_client
-from config import MIN_MINUTE, MAX_MINUTE, MAX_SCHEDULE_HOURS, SCAN_INTERVAL_SLOW
+from config import MIN_MINUTE, MAX_MINUTE, MAX_SCHEDULE_HOURS, SCAN_INTERVAL_SLOW, MAX_BET_BUDGET_USD, BET_STAKE_USD
+from risk_manager import RiskManager
 
 logger = logging.getLogger("scheduler")
 
@@ -197,12 +198,16 @@ def run_scheduler_loop():
             if active_run:
                 logger.info("!!! WAKING UP for match: %s", active_run["title"])
                 telegram_client.send_status_update(f"Waking up for: {active_run['title']} 🏟")
-                
+
+                # Fresh RiskManager per session — budget and duplicate guard reset each game
+                session_risk = RiskManager(max_budget=MAX_BET_BUDGET_USD, stake_per_bet=BET_STAKE_USD)
+                logger.info("RiskManager created — budget $%.2f, stake $%.2f", MAX_BET_BUDGET_USD, BET_STAKE_USD)
+
                 # Start frequent scanning session
                 session_end = active_run["end_time"]
                 while datetime.now(timezone.utc) < session_end:
                     try:
-                        main.run_single_scan()
+                        main.run_single_scan(risk_manager=session_risk)
                     except Exception as e:
                         logger.error("Error during scan session: %s", e)
                     

@@ -20,8 +20,8 @@ A manually-triggered Python script that scans soccer markets. It uses a **"Slow 
 | `telegram_client.py` | Telegram alerts and heartbeats | ✅ Done |
 | `Dockerfile` | Container definition for cloud deployment | ✅ Done |
 | `.dockerignore` | Excludes secrets and artifacts from Docker image | ✅ Done |
-| `risk_manager.py` | Budget cap, per-bet stake sizing, duplicate guard | 🔜 Session 17 |
-| `trader.py` | CLOB order placement via `py-clob-client` | 🔜 Session 17 |
+| `risk_manager.py` | Budget cap, per-bet stake sizing, duplicate guard | ✅ Session 17 |
+| `trader.py` | CLOB order placement via `py-clob-client` | ✅ Session 17 |
 
 ---
 
@@ -69,6 +69,17 @@ All modules wired, imports verified, dependencies installed.
 - Scanner now alerts on Polymarket price alone: any outcome >= `WIN_PROB_THRESHOLD` (80%) in the 75–90+ min window triggers a bet signal.
 - Removed dead constants from `config.py` (`ODDS_API_*`, `RESOLVED_ODDS_THRESHOLD`, `MIN_EDGE_THRESHOLD`).
 - `ODDS_API_KEY` credential no longer required.
+
+### Phase 17 — Automatic Betting via CLOB ✅
+- **Trigger**: manual signal capture too slow; live signals confirmed correct; waived 2-3 week observation prerequisite.
+- **New modules**: `risk_manager.py` (session-scoped budget cap + duplicate guard), `trader.py` (py-clob-client wrapper, FOK market orders).
+- **Key fix in `scanner.py`**: added `token_id` field (`clobTokenIds[0]`) to opportunity dict — previously missing, order placement would have been impossible.
+- **Signal flow**: scanner → Telegram alert → `risk_manager.approve()` → `trader.place_order()` → `risk_manager.record_bet()` → Telegram confirmation / failure alert.
+- **Graceful degradation**: if CLOB credentials absent, bot continues in alert-only mode (no crash).
+- **Budget**: `MAX_BET_BUDGET_USD = $5.00` per session, `BET_STAKE_USD = $1.00` flat stake.
+- **Order type**: FOK (Fill or Kill) — immediate fill or cancelled; no stale orders after game ends.
+- **Credentials added**: `CLOB_PK`, `CLOB_API_KEY`, `CLOB_API_SECRET`, `CLOB_API_PASSPHRASE`.
+- **Branch**: `feature/automatic-betting` — pending review before merge to main.
 
 ### Phase 16b — Fix: display.py Silent Crash on Bet Signal ✅
 - Root cause: `display.print_results()` still referenced old Odds API era fields (`reference_prob`, `resolved_outcome`, `score`). Any real opportunity caused a `KeyError`, which the scheduler's `try/except` swallowed silently — Telegram alert was never sent.

@@ -87,6 +87,31 @@ def send_status_update(status: str) -> None:
     msg = f"🤖 *Status Update:* {status}"
     send_message(msg)
 
+def send_order_confirmation(opp: dict, order_resp: dict, stake_usdc: float) -> None:
+    """
+    Sends a bet confirmation after a CLOB order is successfully placed.
+    """
+    poly_prob = opp.get("poly_prob", 0) * 100
+    order_id = order_resp.get("orderID", "unknown") if isinstance(order_resp, dict) else str(order_resp)
+    msg = f"✅ *BET PLACED*\n\n"
+    msg += f"🏟 *Match:* {opp.get('match', 'Unknown')}\n"
+    msg += f"⏱ *Minute:* ~{opp.get('minute', '?')}\n\n"
+    msg += f"🎯 *Outcome:* {opp.get('outcome', '?')}\n"
+    msg += f"💰 *Stake:* ${stake_usdc:.2f} @ {poly_prob:.1f}¢\n"
+    msg += f"🔑 *Order ID:* `{order_id}`\n"
+    msg += f"\n[View on Polymarket]({opp.get('market_url', 'https://polymarket.com')})"
+    send_message(msg)
+
+def send_order_failure(opp: dict, reason: str) -> None:
+    """
+    Sends an alert when a CLOB order fails so the operator can investigate.
+    """
+    msg = f"❌ *ORDER FAILED*\n\n"
+    msg += f"🏟 *Match:* {opp.get('match', 'Unknown')}\n"
+    msg += f"🎯 *Outcome:* {opp.get('outcome', '?')}\n"
+    msg += f"⚠️ *Reason:* `{reason}`"
+    send_message(msg)
+
 DASHBOARD_FILE = ".dashboard_msg_id"
 
 def _get_last_dashboard_id() -> Optional[int]:

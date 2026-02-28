@@ -243,8 +243,19 @@ Branch `feature/automatic-betting` merged to `main` and deployed to Koyeb.
 
 ---
 
-## Session 19 — Observability & Post-Bet Analysis (planned)
+## Session 19 — Moneyline-Only Filter ✅
+- [x] THINK: Root cause — Gamma returns Player Props, Total Corners, Halftime Result, Exact Score, More Markets as separate events; old `_SCHEDULE_SUFFIXES` only deduplicated known suffixes, new variants passed through; dashboard showed 41 games vs ~8 actual matches ✅
+- [x] EXECUTE: Replace `_base_match_title()` + `_SCHEDULE_SUFFIXES` with `_moneyline_base_title()` in `polymarket_client.py`; returns `None` for any " - " suffix that is not "- Winner" ✅
+- [x] EXECUTE: Apply filter in `add_events()` (scanner) and `find_matches()` (scheduler) ✅
+- [x] EXECUTE: Update `HANDOFF.md`, `implementation_plan.md`, `MEMORY.md`, `todo.md` ✅
+- [x] VERIFY: Committed and pushed to `main` (3171fe8) ✅
+- [ ] VERIFY: Dashboard count reduced (expected ~8 matches per day vs previous ~41) — pending next discovery cycle
+
+---
+
+## Session 20 — Observability & Post-Bet Analysis (planned)
 - [ ] THINK: Log per-bet record (token_id, stake, fill price, P&L) to a persistent file
 - [ ] THINK: Session summary Telegram message after each game window closes
 - [ ] THINK: Distinguish FOK-cancelled vs filled from order response `status` field
 - [ ] THINK: Silence repeated ORDER FAILED spam for auth/infra errors — record failed token_ids to prevent retries within same session
+- [ ] THINK: Deduplicate BET SIGNAL alerts — skip Telegram if same token_id alerted within same session window

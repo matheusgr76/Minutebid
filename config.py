@@ -29,6 +29,7 @@ LEAGUE_TAG_SLUGS = {
 MIN_MINUTE = 75        # Only consider matches at or after this minute
 MAX_MINUTE = 120       # Covers 90 + extra time
 WIN_PROB_THRESHOLD = 0.80  # Minimum Polymarket implied probability to surface a market
+MAX_WIN_PROB_THRESHOLD = 0.97  # Exclude near-resolved markets (CLOB suspends trading above this)
 MAX_SCHEDULE_HOURS = 48    # Only monitor matches starting within this window
 SCAN_INTERVAL_SLOW = 120   # 2-minute "Slow Pulse" interval during active monitoring
 

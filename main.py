@@ -84,8 +84,14 @@ def run_single_scan(risk_manager: RiskManager = None) -> None:
             risk_manager.record_bet(token_id)
             telegram_client.send_order_confirmation(opp, result, BET_STAKE_USD)
         except Exception as e:
-            logger.error("Order failed for '%s': %s", opp["match"], e)
-            telegram_client.send_order_failure(opp, str(e))
+            err_str = str(e)
+            # "Invalid token id" = CLOB closed trading on this market (near-resolved).
+            # Not operator-actionable — log only, skip Telegram noise.
+            if "Invalid token id" in err_str:
+                logger.warning("CLOB rejected token_id=%s (market closed/resolved): %s", token_id, e)
+            else:
+                logger.error("Order failed for '%s': %s", opp["match"], e)
+                telegram_client.send_order_failure(opp, err_str)
 
 
 def run() -> None:

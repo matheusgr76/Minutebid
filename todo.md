@@ -199,6 +199,15 @@ Branch `feature/automatic-betting` merged to `main` and deployed to Koyeb.
 
 ---
 
+## Session 17c — Hotfix: Invalid Token ID (Near-Resolved Markets)
+- [x] THINK: Root cause — markets at ≥97¢ have CLOB trading suspended; Gamma still returns clobTokenIds but CLOB rejects them with `PolyApiException: Invalid token id` ✅
+- [x] EXECUTE: Add `MAX_WIN_PROB_THRESHOLD = 0.97` to `config.py` ✅
+- [x] EXECUTE: Update `scanner.py` filter to `WIN_PROB_THRESHOLD <= prob < MAX_WIN_PROB_THRESHOLD` ✅
+- [x] EXECUTE: Update `main.py` to silently log (not Telegram alert) when `Invalid token id` error is caught ✅
+- [ ] VERIFY: Confirm next live bet fires cleanly with no "Invalid token id" in logs
+
+---
+
 ## Session 18 — Observability & Post-Bet Analysis (planned)
 - [ ] THINK: Log per-bet record (token_id, stake, fill price, P&L) to a persistent file
 - [ ] THINK: Session summary Telegram message after each game window closes

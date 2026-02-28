@@ -4,7 +4,7 @@
 
 import logging
 from datetime import datetime, timezone
-from config import MIN_MINUTE, MAX_MINUTE, WIN_PROB_THRESHOLD
+from config import MIN_MINUTE, MAX_MINUTE, WIN_PROB_THRESHOLD, MAX_WIN_PROB_THRESHOLD
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def filter_opportunities(
         if not best:
             continue
 
-        if best["probability"] >= WIN_PROB_THRESHOLD:
+        if WIN_PROB_THRESHOLD <= best["probability"] < MAX_WIN_PROB_THRESHOLD:
             opportunities.append({
                 "match": event.get("title", ""),
                 "minute": minute,

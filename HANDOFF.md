@@ -1,6 +1,6 @@
 # Minutebid — Project Handoff
 
-> Last updated: Session 17d (2026-02-28)
+> Last updated: Session 18 (2026-02-28)
 
 ## What This Is
 
@@ -161,8 +161,9 @@ python main.py            # Single scan, alert-only (no betting)
 
 ---
 
-## Next Planned Work (Session 18)
+## Next Planned Work (Session 19)
 
 - Log per-bet record (token_id, stake, fill price, P&L) to a persistent file
 - Session summary Telegram message after each game window closes
 - Distinguish FOK-cancelled vs filled from order response `status` field
+- Silence repeated ORDER FAILED spam — record failed token_ids to prevent retry within same session window

@@ -82,8 +82,8 @@ All modules wired, imports verified, dependencies installed.
 
 ### Phase 17b — Hotfix: py-clob-client `side` Argument ✅
 - **Error**: `MarketOrderArgs.__init__() missing 1 required positional argument: 'side'`
-- **Root cause**: py-clob-client requires an explicit integer `side` param; `BUY` constant is not exported from `clob_types` in the installed version.
-- **Fix**: defined `_SIDE_BUY = 0` locally in `trader.py`. No external import needed, works across all library versions.
+- **Root cause**: py-clob-client requires an explicit `side` param; `BUY` constant is not exported from `clob_types` in the installed version.
+- **Fix (final)**: `_SIDE_BUY = "BUY"` string in `trader.py`. Earlier attempt used integer `0` which broke on a newer Koyeb build; string `"BUY"` is stable across all library versions.
 
 ### Phase 17c — Hotfix: Upper Probability Bound ✅
 - **Error**: `PolyApiException[status_code=400, error_message={'error': 'Invalid token id'}]` on markets at 98–100¢.
@@ -113,17 +113,25 @@ All modules wired, imports verified, dependencies installed.
 - Added `'europa_league': 'uel'` to `LEAGUE_TAG_SLUGS` in `config.py`.
 - UEL now included in daily discovery alongside UCL, Bundesliga, EPL, La Liga, and Serie A.
 
-### Phase 14 — Cloud Deployment (Koyeb) ✅
+### Phase 17e — Deployment: Resolve CLOB Geoblock → Fly.io São Paulo ✅
+- **Root cause**: All three Koyeb regions are blocked by Polymarket's CLOB geoblock (country-level, not datacenter-IP):
+  - Frankfurt = Germany (fully blocked), Singapore (close-only, cannot open new positions), Washington DC = US (fully blocked).
+- **Solution**: Fly.io `gru` (São Paulo, Brazil) — Brazil is not on Polymarket's blocked list. ~$2.20/month.
+- **New file**: `fly.toml` — `shared-cpu-1x` 256MB, `auto_stop_machines = "off"`, `min_machines_running = 1`, `internal_port = 8000`.
+- **Deploy workflow**: manual — `fly deploy` from project root. No auto-deploy on git push.
+- **Koyeb**: retired. Cannot be used for CLOB order placement from any of its available regions.
+- **Verified**: `curl -I https://minutebid-gru.fly.dev/` → `200 OK` from `gru`; scheduler heartbeating every 10 min.
+
+### Phase 14 — Cloud Deployment (Koyeb) ✅ — RETIRED (see Phase 17e)
 - Moved from local Windows machine to Koyeb free tier (always-on Linux container).
-- Service type: **Worker** (background process, no HTTP endpoint required).
 - Added `Dockerfile` using `python:3.12-slim` with `PYTHONUNBUFFERED=1` for real-time log streaming.
 - Added `.dockerignore` to exclude `.env`, logs, and `__pycache__` from the image.
 - Added `import platform` guard to `scheduler.py` so `SetThreadExecutionState` is a no-op on Linux.
-- Credentials (`TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `CLOB_PK`, `CLOB_API_KEY`, `CLOB_API_SECRET`, `CLOB_API_PASSPHRASE`) set as Secrets in Koyeb UI — `python-dotenv` reads OS env vars transparently when no `.env` file is present.
+- **Retired in Phase 17e**: all Koyeb regions blocked or restricted by Polymarket CLOB geoblock.
 
 ---
 
-## Data Flow (current — Session 17d)
+## Data Flow (current — Session 18)
 
 ```mermaid
 graph TD

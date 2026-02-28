@@ -214,11 +214,28 @@ Branch `feature/automatic-betting` merged to `main` and deployed to Koyeb.
 - [x] EXECUTE: Add `get_clob_yes_token_id(condition_id)` to `polymarket_client.py` — hits `GET /clob.polymarket.com/markets/{condition_id}`, extracts YES token ✅
 - [x] EXECUTE: Add `condition_id` (best market's conditionId) to opportunity dict in `scanner.py` ✅
 - [x] EXECUTE: Update `main.py` — resolve authoritative token_id from CLOB API before placing order; Gamma's value is fallback only ✅
-- [ ] VERIFY: First `✅ BET PLACED` on Telegram — pending next live game
+- [x] VERIFY: `side="BUY"` confirmed working — order fully constructed and sent ✅
+- [x] VERIFY: CLOB token_id lookup confirmed working — `Invalid token id` errors gone ✅
+- [x] VERIFY: New blocker — `403 Geoblock` — Koyeb's server region is blocked by Polymarket CLOB ✅
 
 ---
 
-## Session 18 — Observability & Post-Bet Analysis (planned)
+## Session 17e — Deployment: Resolve Geoblock ✅
+- [x] THINK: All Koyeb regions blocked — Frankfurt (Germany, fully blocked), Singapore (close-only), Washington DC (US, blocked) ✅
+- [x] THINK: Solution — Fly.io `gru` (São Paulo, Brazil). Brazil not on Polymarket blocked list. ~$2.20/month ✅
+- [x] EXECUTE: Create `fly.toml` — shared-cpu-1x 256MB, port 8000, `auto_stop_machines="off"`, `min_machines_running=1`, region `gru` ✅
+- [x] EXECUTE: `fly apps create minutebid-gru`, `fly secrets set` (all 6 creds), `fly deploy` ✅
+- [x] EXECUTE: Scale to 1 machine (`fly scale count 1`) — remove HA second machine ✅
+- [x] EXECUTE: Update UptimeRobot monitor URL → `https://minutebid-gru.fly.dev/` ✅
+- [x] EXECUTE: Retire Koyeb service (Singapore) ✅
+- [x] VERIFY: `curl -I https://minutebid-gru.fly.dev/` → `200 OK` from `gru` ✅
+- [x] VERIFY: Scheduler running — 45 matches discovered, heartbeat every 10 min ✅
+- [ ] VERIFY: First `✅ BET PLACED` on Telegram — pending next live match signal
+
+---
+
+## Session 19 — Observability & Post-Bet Analysis (planned)
 - [ ] THINK: Log per-bet record (token_id, stake, fill price, P&L) to a persistent file
 - [ ] THINK: Session summary Telegram message after each game window closes
 - [ ] THINK: Distinguish FOK-cancelled vs filled from order response `status` field
+- [ ] THINK: Silence repeated ORDER FAILED spam — record failed token_ids to prevent retries within same session

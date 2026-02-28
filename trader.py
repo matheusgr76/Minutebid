@@ -6,7 +6,7 @@ import logging
 import os
 
 from py_clob_client.client import ClobClient
-from py_clob_client.clob_types import ApiCreds, MarketOrderArgs, OrderType
+from py_clob_client.clob_types import ApiCreds, MarketOrderArgs, OrderType, BUY
 
 from config import CLOB_HOST, CLOB_CHAIN_ID
 
@@ -63,6 +63,7 @@ def place_order(token_id: str, stake_usdc: float) -> dict:
         MarketOrderArgs(
             token_id=token_id,
             amount=stake_usdc,
+            side=BUY,  # buying the YES outcome token
         )
     )
 

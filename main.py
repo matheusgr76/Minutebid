@@ -96,9 +96,10 @@ def run_single_scan(risk_manager: RiskManager = None) -> None:
         except Exception as e:
             err_str = str(e)
             # "Invalid token id" = CLOB closed trading on this market (near-resolved).
-            # Not operator-actionable — log only, skip Telegram noise.
-            if "Invalid token id" in err_str:
-                logger.warning("CLOB rejected token_id=%s (market closed/resolved): %s", token_id, e)
+            # "no match" = order book has no asks (illiquid market, e.g. More Markets spreads).
+            # Both are not operator-actionable — log only, skip Telegram noise.
+            if "Invalid token id" in err_str or err_str == "no match":
+                logger.warning("CLOB silent-skip token_id=%s (%s): %s", token_id, opp["match"], e)
             else:
                 logger.error("Order failed for '%s': %s", opp["match"], e)
                 telegram_client.send_order_failure(opp, err_str)

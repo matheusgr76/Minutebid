@@ -234,8 +234,14 @@ Branch `feature/automatic-betting` merged to `main` and deployed to Koyeb.
 
 ---
 
+## Session 18b — Hotfix: Silence "no match" ORDER FAILED Telegram spam
+- [x] THINK: Root cause — `no match` raised by py-clob-client when order book has zero asks (illiquid sub-markets like More Markets spreads); client-side, no HTTP request made ✅
+- [x] EXECUTE: Add `err_str == "no match"` to silent-log branch in `main.py` exception handler (alongside existing "Invalid token id" guard) ✅
+
+---
+
 ## Session 19 — Observability & Post-Bet Analysis (planned)
 - [ ] THINK: Log per-bet record (token_id, stake, fill price, P&L) to a persistent file
 - [ ] THINK: Session summary Telegram message after each game window closes
 - [ ] THINK: Distinguish FOK-cancelled vs filled from order response `status` field
-- [ ] THINK: Silence repeated ORDER FAILED spam — record failed token_ids to prevent retries within same session
+- [ ] THINK: Silence repeated ORDER FAILED spam for auth/infra errors — record failed token_ids to prevent retries within same session

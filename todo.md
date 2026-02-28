@@ -167,7 +167,8 @@
 ## Session 17 — Automatic Betting (Phase 17) — branch: feature/automatic-betting
 
 ### Prerequisites (human gates — must be satisfied before EXECUTE)
-- [ ] 2–3 weeks of live signal observation to validate strategy profitability
+- [x] Signal quality validated — multiple live signals confirmed correct, manual execution too slow ✅
+- [x] Polymarket account ready ✅
 - [ ] Fund Polymarket account with USDC on Polygon
 - [ ] Generate CLOB API key + secret in Polymarket UI
 

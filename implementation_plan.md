@@ -218,10 +218,11 @@ scanner finds opportunity
 ```
 
 ### Prerequisites Before Building
-1. 2–3 weeks of live signal monitoring confirms strategy profitability
-2. Fund a Polymarket account with USDC on Polygon
-3. Generate CLOB API credentials in Polymarket UI
-4. Decide on staking strategy (flat stake recommended first)
+1. ~~2–3 weeks of live signal monitoring~~ — **waived**: multiple live signals confirmed correct; manual execution too slow to capture opportunities in time
+2. ~~Polymarket account~~ — **ready** ✅
+3. Fund Polymarket account with USDC on Polygon
+4. Generate CLOB API credentials in Polymarket UI
+5. Decide on staking strategy (flat stake recommended first)
 
 ### Key Risks
 - **Key exposure**: private key in Koyeb env vars (same pattern as TELEGRAM_TOKEN — acceptable)

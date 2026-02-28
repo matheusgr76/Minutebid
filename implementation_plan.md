@@ -103,24 +103,28 @@ All modules wired, imports verified, dependencies installed.
 - Added `Dockerfile` using `python:3.12-slim` with `PYTHONUNBUFFERED=1` for real-time log streaming.
 - Added `.dockerignore` to exclude `.env`, logs, and `__pycache__` from the image.
 - Added `import platform` guard to `scheduler.py` so `SetThreadExecutionState` is a no-op on Linux.
-- Credentials (`ODDS_API_KEY`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`) set as env vars in Koyeb UI — `python-dotenv` reads OS env vars transparently when no `.env` file is present.
+- Credentials (`TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `CLOB_PK`, `CLOB_API_KEY`, `CLOB_API_SECRET`, `CLOB_API_PASSPHRASE`) set as Secrets in Koyeb UI — `python-dotenv` reads OS env vars transparently when no `.env` file is present.
 
 ---
 
-## Data Flow (current — Session 16b)
+## Data Flow (current — Session 17)
 
 ```mermaid
 graph TD
     A[scheduler.py] -->|1hr loop| B(Gamma API Discovery)
-    A -->|Wakeup at kickoff+80min| C(main.py)
+    A -->|Wakeup at kickoff+80min| C(main.py + RiskManager)
     C -->|get_active_soccer_events| D[Gamma API]
     D --> E{scanner.filter_opportunities}
     E -->|minute from startTime + elapsed| E
     E -->|prob >= 80% in min 75-120| F[Telegram Alert]
-    E -->|Display| G[Terminal UI]
+    F --> G{risk_manager.approve}
+    G -->|ok| H[trader.place_order FOK]
+    G -->|duplicate / budget| I[skip silently]
+    H -->|filled| J[Telegram: BET PLACED]
+    H -->|failed| K[Telegram: ORDER FAILED]
 ```
 
-## Data Flow (Session 17 — Automatic Betting)
+## Data Flow (Session 17 — Automatic Betting — archived diagram)
 
 ```mermaid
 graph TD

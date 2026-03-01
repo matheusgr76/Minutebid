@@ -48,6 +48,12 @@ class RiskManager:
             self._spent, self._max_budget,
         )
 
+    def block_token(self, token_id: str) -> None:
+        """Mark token as do-not-retry for this session without spending budget.
+        Use for infrastructure failures (401, 403) that won't resolve mid-session."""
+        self._placed.add(token_id)
+        logger.warning("Token blocked (no retry this session): %s", token_id)
+
     # ------------------------------------------------------------------
     # Read-only properties for logging / Telegram messages
     # ------------------------------------------------------------------

@@ -253,6 +253,16 @@ Branch `feature/automatic-betting` merged to `main` and deployed to Koyeb.
 
 ---
 
+## Session 19b — Credential Debugging & Redeploy ✅
+- [x] THINK: Root cause — CLOB 401 persisted because CLOB_PK was set to wallet ADDRESS (20 bytes / 40 chars) instead of private key (32 bytes / 64 chars); Trust Wallet exports PK with `0x` prefix which must be stripped ✅
+- [x] EXECUTE: Verify correct CLOB_PK via `Account.from_key()` diagnostic — confirmed `0x06F877...` ✅
+- [x] EXECUTE: Update `.env` with correct 64-char Trust Wallet private key (no `0x` prefix) ✅
+- [x] EXECUTE: Push all 4 CLOB credentials to Fly.io via `fly secrets set`; machine restarted ✅
+- [x] EXECUTE: Update `HANDOFF.md` with Debugging Lesson 7 (CLOB 401 — wallet mismatch + 0x prefix) ✅
+- [ ] VERIFY: First `✅ BET PLACED` — pending next liquid win/draw signal
+
+---
+
 ## Session 20 — Observability & Post-Bet Analysis (planned)
 - [ ] THINK: Log per-bet record (token_id, stake, fill price, P&L) to a persistent file
 - [ ] THINK: Session summary Telegram message after each game window closes

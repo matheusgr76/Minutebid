@@ -1,6 +1,6 @@
 # Minutebid — Project Handoff
 
-> Last updated: Session 19 (2026-02-28)
+> Last updated: Session 19b (2026-03-01)
 
 ## What This Is
 
@@ -72,11 +72,13 @@ Minutebid is a live soccer betting bot that monitors Polymarket in the 75–90+ 
 ```
 TELEGRAM_TOKEN         # Bot token
 TELEGRAM_CHAT_ID       # Target chat ID
-CLOB_PK                # Wallet private key (hex, no 0x prefix)
-CLOB_API_KEY           # Polymarket CLOB API key
+CLOB_PK                # Wallet private key — 64 hex chars, NO 0x prefix (Trust Wallet exports with 0x — strip it)
+CLOB_API_KEY           # Polymarket CLOB API key — must be generated while connected to the same wallet as CLOB_PK
 CLOB_API_SECRET        # Polymarket CLOB secret
 CLOB_API_PASSPHRASE    # Polymarket CLOB passphrase
 ```
+
+> **Critical**: The wallet you connect to Polymarket when generating the API key MUST be the same wallet whose private key is in `CLOB_PK`. Mismatch = 401 on every order, regardless of key validity.
 
 ---
 
@@ -154,7 +156,25 @@ Adding credentials to Koyeb's "Secrets" tab is NOT the same as adding them to th
 
 ---
 
-### 7. Polymarket Sports WebSocket silently returns nothing
+### 7. CLOB 401 — wallet mismatch and `0x` prefix in private key
+**Symptom**: `PolyApiException[status_code=401, error_message={'error': 'Unauthorized/Invalid api key'}]` on every bet attempt, even after regenerating API keys.
+
+**Root cause — wallet mismatch**: The CLOB API key is tied to the wallet address that was connected to Polymarket when the key was generated. If `CLOB_PK` belongs to a different wallet than the one used to generate the API key, every signed request will fail with 401. The API key itself can be valid; it just doesn't match the signing key.
+
+**Root cause — 0x prefix**: Trust Wallet (and many other wallets) export the private key with a `0x` prefix (e.g. `0xabc123...`). py-clob-client expects the raw 64 hex characters with no prefix. Setting `CLOB_PK` with the `0x` prefix causes `binascii.Error: Non-hexadecimal digit found` or a malformed signature that returns 401.
+
+**Fix**:
+1. Strip the `0x` prefix — use only the 64 hex chars after it
+2. Regenerate the CLOB API key at `polymarket.com` while connected with the correct wallet (Trust Wallet)
+3. Set all four values in one `fly secrets set` command — machine restarts automatically
+
+**Diagnostic**: Run `python -c "from eth_account import Account; print(Account.from_key('YOUR_PK').address)"` to confirm the derived address matches your Polymarket wallet address.
+
+**Verified resolved (2026-03-01)**: No 401 after setting Trust Wallet PK (no `0x`) + freshly generated API key from the same wallet.
+
+---
+
+### 8. Polymarket Sports WebSocket silently returns nothing
 **Symptom**: Scanner always found 0 events in the active game window.
 
 **Root cause**: `wss://sports-api.polymarket.com/ws` requires a subscription message after connection. Without it, the server never pushes data. The bot connected and read — and received nothing.
@@ -179,10 +199,12 @@ python main.py            # Single scan, alert-only (no betting)
 
 | Item | Status |
 |---|---|
-| `"no match"` spam silenced | ✅ Verified live (2026-02-28, Dortmund-Bayern O/U) |
+| `"no match"` spam silenced | ✅ Verified live (2026-02-28, Dortmund-Bayern O/U; re-confirmed 2026-03-01 after fly deploy) |
 | `"Invalid token id"` spam silenced | ✅ Verified (Session 17c/d) |
 | CLOB 403 geoblock resolved | ✅ Verified (Fly.io gru, 200 OK) |
-| CLOB 401 credentials | ⏳ Unverified — credentials re-set; need next liquid win/draw market signal |
+| CLOB 401 credentials | ✅ Resolved (2026-03-01) — Trust Wallet PK (no 0x) + fresh API key from same wallet. No 401 since. |
+| Moneyline-only filter live | ✅ Deployed (Session 19, fly deploy 2026-03-01) |
+| First `✅ BET PLACED` | ⏳ Pending — next liquid win/draw signal needed (credentials confirmed working; recent signals were illiquid at minute ~110+) |
 | Duplicate BET SIGNAL alerts | Known behavior — two scan cycles per opportunity; alerts not deduplicated (only bets are) |
 
 ## Next Planned Work (Session 20)

@@ -100,6 +100,11 @@ def run_single_scan(risk_manager: RiskManager = None) -> None:
             # Both are not operator-actionable — log only, skip Telegram noise.
             if "Invalid token id" in err_str or err_str == "no match":
                 logger.warning("CLOB silent-skip token_id=%s (%s): %s", token_id, opp["match"], e)
+            elif "401" in err_str or "403" in err_str or "Unauthorized" in err_str:
+                # Auth/geoblock errors won't resolve mid-session — block token to stop retry spam.
+                logger.warning("Auth error (no retry this session) token_id=%s (%s): %s", token_id, opp["match"], e)
+                if risk_manager is not None:
+                    risk_manager.block_token(token_id)
             else:
                 logger.error("Order failed for '%s': %s", opp["match"], e)
                 telegram_client.send_order_failure(opp, err_str)

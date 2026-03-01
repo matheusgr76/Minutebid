@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import polymarket_client
 import main
 import telegram_client
+import trader
 from config import MIN_MINUTE, MAX_MINUTE, MAX_SCHEDULE_HOURS, SCAN_INTERVAL_SLOW, MAX_BET_BUDGET_USD, BET_STAKE_USD
 from risk_manager import RiskManager
 
@@ -124,6 +125,7 @@ def run_scheduler_loop():
     load_dotenv()
     _start_health_server()
     logger.info("Starting Smart Scheduler Loop...")
+    trader.log_credential_fingerprint()  # Log wallet+api_key on every machine boot
     telegram_client.send_status_update("Smart Scheduler Started 🚀")
     
     # Track heartbeat for diagnostic purposes

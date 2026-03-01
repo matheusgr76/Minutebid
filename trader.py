@@ -5,6 +5,7 @@
 import logging
 import os
 
+from eth_account import Account
 from py_clob_client.client import ClobClient
 from py_clob_client.clob_types import ApiCreds, MarketOrderArgs, OrderType
 
@@ -13,6 +14,22 @@ _SIDE_BUY = "BUY"  # py-clob-client >=0.16: expects string 'BUY' or 'SELL'
 from config import CLOB_HOST, CLOB_CHAIN_ID
 
 logger = logging.getLogger(__name__)
+
+
+def log_credential_fingerprint() -> None:
+    """Log non-sensitive credential fingerprint so every order attempt is traceable in Fly logs."""
+    pk = os.getenv("CLOB_PK", "").strip()
+    api_key = os.getenv("CLOB_API_KEY", "").strip()
+    try:
+        address = Account.from_key(pk).address if pk else "MISSING"
+    except Exception as e:
+        address = f"INVALID({e})"
+    logger.info(
+        "CRED FINGERPRINT | wallet=%s | api_key_prefix=%s... | chain=%s",
+        address,
+        api_key[:8] if len(api_key) >= 8 else api_key,
+        CLOB_CHAIN_ID,
+    )
 
 
 def _build_client() -> ClobClient:
@@ -59,6 +76,7 @@ def place_order(token_id: str, stake_usdc: float) -> dict:
         EnvironmentError: if any CLOB credential is missing.
         Exception:        on network failure or order rejection.
     """
+    log_credential_fingerprint()
     client = _build_client()
 
     order = client.create_market_order(
